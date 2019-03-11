@@ -21,7 +21,7 @@ namespace KK_ClothingStateMenu
 
         private const float Height = 20f;
         private const float Margin = 5f;
-        private const float Width = 120f;
+        private const float Width = 117f;
 
         private readonly List<ClothButton> _buttons = new List<ClothButton>();
 
@@ -65,6 +65,7 @@ namespace KK_ClothingStateMenu
             {
                 _showInterface = value;
                 _chaCtrl = null;
+                _buttons.Clear();
 
                 if (!_showInterface) return;
 
@@ -79,8 +80,8 @@ namespace KK_ClothingStateMenu
                 }
 
                 _accesorySlotsRect = _buttons.Last().Position;
-                _accesorySlotsRect.x = _accesorySlotsRect.x - 20;
-                _accesorySlotsRect.width = _accesorySlotsRect.width - 20;
+                _accesorySlotsRect.x = _accesorySlotsRect.x + 7;
+                _accesorySlotsRect.width = _accesorySlotsRect.width - 7;
                 _accesorySlotsRect.y = _accesorySlotsRect.y + (Height + Margin);
                 _accesorySlotsRect.height = 300f;
             }
@@ -109,9 +110,10 @@ namespace KK_ClothingStateMenu
                 var showAccessory = _chaCtrl.fileStatus.showAccessory;
                 if (showAccessory.Length > 1)
                 {
-                    if (GUILayout.Button("All accs ON"))
+                    if (GUILayout.Button("All accs On"))
                         _chaCtrl.SetAccessoryStateAll(true);
-                    if (GUILayout.Button("All accs OFF"))
+                    GUILayout.Space(-5);
+                    if (GUILayout.Button("All accs Off"))
                         _chaCtrl.SetAccessoryStateAll(false);
                 }
 
@@ -144,6 +146,7 @@ namespace KK_ClothingStateMenu
         {
             if (GUILayout.Button($"Slot {accIndex}: {(isOn ? "On" : "Off")}"))
                 _chaCtrl.SetAccessoryState(accIndex, !isOn);
+            GUILayout.Space(-5);
         }
     }
 }
