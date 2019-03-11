@@ -34,7 +34,7 @@ namespace KK_ClothingStateMenu
         private readonly ChaControl _chaCtrl;
         private readonly string _fancyName;
 
-        public void TriggerUpdate()
+        public void NextState()
         {
             _chaCtrl.SetClothesStateNext((int) Kind);
         }

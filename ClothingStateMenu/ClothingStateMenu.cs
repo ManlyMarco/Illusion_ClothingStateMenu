@@ -102,7 +102,7 @@ namespace KK_ClothingStateMenu
             foreach (var clothButton in _buttons)
             {
                 if (GUI.Button(clothButton.Position, clothButton.Text))
-                    clothButton.TriggerUpdate();
+                    clothButton.NextState();
             }
 
             GUILayout.BeginArea(_accesorySlotsRect);
