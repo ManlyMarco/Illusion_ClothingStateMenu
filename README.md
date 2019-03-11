@@ -8,3 +8,5 @@ Based on the original ClothingStateMenu plugin made by essu.
 2. Download the latest release.
 3. Place the .dll inside your BepInEx folder, overwrite if asked.
 4. Start character maker. You should see a new checkbox in the bottom right corner.
+
+![preview](https://user-images.githubusercontent.com/39247311/54150673-51efb780-4439-11e9-9f4f-e682def8e173.png)
