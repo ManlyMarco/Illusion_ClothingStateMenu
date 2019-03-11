@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using BepInEx;
-using ChaCustom;
 using KKAPI;
 using KKAPI.Maker;
 using KKAPI.Maker.UI.Sidebar;
 using MoreAccessoriesKOI;
-using TMPro;
 using UniRx;
 using UnityEngine;
 
@@ -22,7 +19,6 @@ namespace KK_ClothingStateMenu
     {
         internal const string Version = "2.0";
 
-        //private const float CoordWidth = 25f;
         private const float Height = 20f;
         private const float Margin = 5f;
         private const float Width = 120f;
@@ -33,10 +29,9 @@ namespace KK_ClothingStateMenu
         private Rect _accesorySlotsRect;
 
         private ChaControl _chaCtrl;
-        //private TMP_Dropdown _ddCoordinate;
 
         #region Entry point
-        
+
         private void Start()
         {
             if (!KoikatuAPI.CheckRequiredPlugin(this, KoikatuAPI.GUID, new Version(KoikatuAPI.VersionConst)))
@@ -63,33 +58,29 @@ namespace KK_ClothingStateMenu
         private bool _showInterface;
         private bool ShowInterface
         {
-            get => _showInterface && _chaCtrl != null && 
-                string.IsNullOrEmpty(Manager.Scene.Instance.AddSceneName) && 
+            get => _showInterface && _chaCtrl != null &&
+                string.IsNullOrEmpty(Manager.Scene.Instance.AddSceneName) &&
                 !MakerAPI.GetMakerBase().customCtrl.hideFrontUI;
             set
             {
                 _showInterface = value;
-
                 _chaCtrl = null;
-                //_ddCoordinate = null;
 
                 if (!_showInterface) return;
-
-                //var customControl = MakerAPI.GetMakerBase().customCtrl;
-                //_ddCoordinate = (TMP_Dropdown)typeof(CustomControl).GetField("ddCoordinate", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(customControl)
-                //    ?? throw new InvalidOperationException("Failed to get CustomControl.ddCoordinate");
 
                 _chaCtrl = MakerAPI.GetCharacterControl();
 
                 var position = GetDisplayRect();
                 foreach (ChaFileDefine.ClothesKind kind in Enum.GetValues(typeof(ChaFileDefine.ClothesKind)))
                 {
-                    if(kind == ChaFileDefine.ClothesKind.shoes_outer) continue;
+                    if (kind == ChaFileDefine.ClothesKind.shoes_outer) continue;
                     _buttons.Add(new ClothButton(position, kind, _chaCtrl));
                     position.y += Height;
                 }
 
                 _accesorySlotsRect = _buttons.Last().Position;
+                _accesorySlotsRect.x = _accesorySlotsRect.x - 20;
+                _accesorySlotsRect.width = _accesorySlotsRect.width - 20;
                 _accesorySlotsRect.y = _accesorySlotsRect.y + (Height + Margin);
                 _accesorySlotsRect.height = 300f;
             }
@@ -112,15 +103,6 @@ namespace KK_ClothingStateMenu
                 if (GUI.Button(clothButton.Position, clothButton.Text))
                     clothButton.TriggerUpdate();
             }
-
-            /*for (var i = 0; i < 7; i++)
-            {
-                var position = _buttons[i].Position;
-                position.x -= CoordWidth + Margin;
-                position.width = CoordWidth;
-                if (GUI.Button(position, (i + 1).ToString()))
-                    _ddCoordinate.value = i;
-            }*/
 
             GUILayout.BeginArea(_accesorySlotsRect);
             {

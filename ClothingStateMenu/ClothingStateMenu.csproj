@@ -52,10 +52,6 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="System.Core" />
-    <Reference Include="TextMeshPro-1.0.55.56.0b12">
-      <HintPath>..\..\..\..\Games\Koikatsu\Koikatu_Data\Managed\TextMeshPro-1.0.55.56.0b12.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="UnityEngine">
       <HintPath>..\..\lib\UnityEngine.dll</HintPath>
       <Private>False</Private>
