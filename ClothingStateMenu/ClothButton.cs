@@ -1,0 +1,55 @@
+﻿using System.Collections.Generic;
+using UnityEngine;
+
+namespace KK_ClothingStateMenu
+{
+    public struct ClothButton
+    {
+        private static readonly Dictionary<ChaFileDefine.ClothesKind, string> _fancyKindNames = new Dictionary<ChaFileDefine.ClothesKind, string>
+        {
+            {ChaFileDefine.ClothesKind.top, "Top"},
+            {ChaFileDefine.ClothesKind.bot, "Bottom"},
+            {ChaFileDefine.ClothesKind.bra, "Bra"},
+            {ChaFileDefine.ClothesKind.shorts, "Underwear"},
+            {ChaFileDefine.ClothesKind.gloves, "Gloves"},
+            {ChaFileDefine.ClothesKind.panst, "Pantyhose"},
+            {ChaFileDefine.ClothesKind.socks, "Legwear"},
+            {ChaFileDefine.ClothesKind.shoes_inner, "Shoes"},
+            {ChaFileDefine.ClothesKind.shoes_outer, "Shoes"}
+        };
+
+        private static readonly Dictionary<int, string> _fancyStateNames = new Dictionary<int, string>
+        {
+            {0, "On"},
+            {1, "Shift"},
+            {2, "Hang"},
+            {3, "Off"}
+        };
+
+        public string Text => $"{_fancyName} - {_fancyStateNames[GetState()]}";
+
+        public readonly Rect Position;
+        public readonly ChaFileDefine.ClothesKind Kind;
+
+        private readonly ChaControl _chaCtrl;
+        private readonly string _fancyName;
+
+        public void TriggerUpdate()
+        {
+            _chaCtrl.SetClothesStateNext((int) Kind);
+        }
+
+        public int GetState()
+        {
+            return _chaCtrl.fileStatus.clothesState[(int) Kind];
+        }
+
+        public ClothButton(Rect position, ChaFileDefine.ClothesKind kind, ChaControl chaCtrl) : this()
+        {
+            Kind = kind;
+            _fancyName = _fancyKindNames[kind];
+            Position = position;
+            _chaCtrl = chaCtrl;
+        }
+    }
+}
