@@ -34,7 +34,8 @@ namespace KK_ClothingStateMenu
 
         private void Start()
         {
-            if (!KoikatuAPI.CheckRequiredPlugin(this, KoikatuAPI.GUID, new Version(KoikatuAPI.VersionConst)))
+            if (!KoikatuAPI.CheckRequiredPlugin(this, KoikatuAPI.GUID, new Version(KoikatuAPI.VersionConst)) ||
+                !KoikatuAPI.CheckRequiredPlugin(this, "com.joan6694.illusionplugins.moreaccessories", new Version("1.0.3")))
                 return;
 
             KoikatuAPI.CheckIncompatiblePlugin(this, "MoreAccessories_CSM");
