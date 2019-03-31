@@ -59,7 +59,8 @@ namespace KK_ClothingStateMenu
 
         private void MakerAPI_Exit(object sender, EventArgs e)
         {
-            ShowInterface = false;
+            _chaCtrl = null;
+            _setCoordAction = null;
         }
 
         private void MakerAPI_Enter(object sender, RegisterSubCategoriesEvent e)
@@ -75,8 +76,10 @@ namespace KK_ClothingStateMenu
         private bool _showInterface;
         private bool ShowInterface
         {
+            // TODO use makerapi instead when new version comes out
             get => _showInterface && _chaCtrl != null &&
-                string.IsNullOrEmpty(Manager.Scene.Instance.AddSceneName) &&
+                (string.IsNullOrEmpty(Manager.Scene.Instance.AddSceneName) || Manager.Scene.Instance.AddSceneName == "CustomScene") &&
+                !Manager.Scene.Instance.IsNowLoadingFade &&
                 !MakerAPI.GetMakerBase().customCtrl.hideFrontUI;
             set
             {
@@ -111,10 +114,9 @@ namespace KK_ClothingStateMenu
         private void SetupCoordButtons()
         {
             var customControl = MakerAPI.GetMakerBase().customCtrl;
-            var coordDropdown = typeof(CustomControl).GetField("ddCoordinate", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(customControl)
-                                ?? throw new InvalidOperationException("Failed to get CustomControl.ddCoordinate");
-            var coordProp = coordDropdown.GetType().GetProperty("value", BindingFlags.Instance | BindingFlags.Public);
-            _setCoordAction = newVal => coordProp.SetValue(coordDropdown, newVal, null);
+            var coordDropdown = typeof(CustomControl).GetField("ddCoordinate", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(customControl);
+            var coordProp = coordDropdown?.GetType().GetProperty("value", BindingFlags.Instance | BindingFlags.Public);
+            _setCoordAction = newVal => coordProp?.SetValue(coordDropdown, newVal, null);
         }
 
         private static Rect GetDisplayRect()
