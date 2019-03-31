@@ -34,7 +34,7 @@ namespace KK_ClothingStateMenu
         private ChaControl _chaCtrl;
 
         [Browsable(false)]
-        private ConfigWrapper<bool> Shown { get; set; }
+        private ConfigWrapper<bool> Show { get; set; }
 
         [DisplayName("Show coordinate change buttons")]
         [Description("Adds buttons to the menu that allow quickly switching between clothing sets. Same as using the clothing dropdown.")]
@@ -48,7 +48,7 @@ namespace KK_ClothingStateMenu
                 !KoikatuAPI.CheckRequiredPlugin(this, "com.joan6694.illusionplugins.moreaccessories", new Version("1.0.3")))
                 return;
 
-            Shown = new ConfigWrapper<bool>("Shown", this, false);
+            Show = new ConfigWrapper<bool>("Show", this, false);
             ShowCoordinateButtons = new ConfigWrapper<bool>("ShowCoordinateButtons", this, false);
 
             KoikatuAPI.CheckIncompatiblePlugin(this, "MoreAccessories_CSM");
@@ -65,8 +65,7 @@ namespace KK_ClothingStateMenu
 
         private void MakerAPI_Enter(object sender, RegisterSubCategoriesEvent e)
         {
-            ShowInterface = Shown.Value;
-            e.AddSidebarControl(new SidebarToggle("Show clothing state menu", Shown.Value, this)).ValueChanged.Subscribe(b => ShowInterface = b);
+            e.AddSidebarControl(new SidebarToggle("Show clothing state menu", Show.Value, this)).ValueChanged.Subscribe(b => ShowInterface = b);
         }
 
         #endregion
@@ -84,7 +83,7 @@ namespace KK_ClothingStateMenu
             set
             {
                 _showInterface = value;
-                Shown.Value = value;
+                Show.Value = value;
 
                 _chaCtrl = null;
                 _buttons.Clear();
