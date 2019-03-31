@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Reflection;
 using BepInEx;
+using ChaCustom;
 using KKAPI;
 using KKAPI.Maker;
 using KKAPI.Maker.UI.Sidebar;
@@ -30,6 +33,13 @@ namespace KK_ClothingStateMenu
 
         private ChaControl _chaCtrl;
 
+        [Browsable(false)]
+        private ConfigWrapper<bool> Shown { get; set; }
+
+        [DisplayName("Show coordinate change buttons")]
+        [Description("Adds buttons to the menu that allow quickly switching between clothing sets. Same as using the clothing dropdown.")]
+        private ConfigWrapper<bool> ShowCoordinateButtons { get; set; }
+
         #region Entry point
 
         private void Start()
@@ -37,6 +47,9 @@ namespace KK_ClothingStateMenu
             if (!KoikatuAPI.CheckRequiredPlugin(this, KoikatuAPI.GUID, new Version(KoikatuAPI.VersionConst)) ||
                 !KoikatuAPI.CheckRequiredPlugin(this, "com.joan6694.illusionplugins.moreaccessories", new Version("1.0.3")))
                 return;
+
+            Shown = new ConfigWrapper<bool>("Shown", this, false);
+            ShowCoordinateButtons = new ConfigWrapper<bool>("ShowCoordinateButtons", this, false);
 
             KoikatuAPI.CheckIncompatiblePlugin(this, "MoreAccessories_CSM");
 
@@ -51,10 +64,13 @@ namespace KK_ClothingStateMenu
 
         private void MakerAPI_Enter(object sender, RegisterSubCategoriesEvent e)
         {
-            e.AddSidebarControl(new SidebarToggle("Show clothing state menu", false, this)).ValueChanged.Subscribe(b => ShowInterface = b);
+            ShowInterface = Shown.Value;
+            e.AddSidebarControl(new SidebarToggle("Show clothing state menu", Shown.Value, this)).ValueChanged.Subscribe(b => ShowInterface = b);
         }
 
         #endregion
+
+        private Action<int> _setCoordAction;
 
         private bool _showInterface;
         private bool ShowInterface
@@ -65,12 +81,16 @@ namespace KK_ClothingStateMenu
             set
             {
                 _showInterface = value;
+                Shown.Value = value;
+
                 _chaCtrl = null;
                 _buttons.Clear();
 
                 if (!_showInterface) return;
 
                 _chaCtrl = MakerAPI.GetCharacterControl();
+
+                SetupCoordButtons();
 
                 var position = GetDisplayRect();
                 foreach (ChaFileDefine.ClothesKind kind in Enum.GetValues(typeof(ChaFileDefine.ClothesKind)))
@@ -86,6 +106,15 @@ namespace KK_ClothingStateMenu
                 _accesorySlotsRect.y = _accesorySlotsRect.y + (Height + Margin);
                 _accesorySlotsRect.height = 300f;
             }
+        }
+
+        private void SetupCoordButtons()
+        {
+            var customControl = MakerAPI.GetMakerBase().customCtrl;
+            var coordDropdown = typeof(CustomControl).GetField("ddCoordinate", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(customControl)
+                                ?? throw new InvalidOperationException("Failed to get CustomControl.ddCoordinate");
+            var coordProp = coordDropdown.GetType().GetProperty("value", BindingFlags.Instance | BindingFlags.Public);
+            _setCoordAction = newVal => coordProp.SetValue(coordDropdown, newVal, null);
         }
 
         private static Rect GetDisplayRect()
@@ -141,6 +170,20 @@ namespace KK_ClothingStateMenu
                 GUILayout.EndScrollView();
             }
             GUILayout.EndArea();
+            
+            if (ShowCoordinateButtons.Value)
+            {
+                const float coordWidth = 25f;
+
+                for (var i = 0; i < 7; i++)
+                {
+                    var position = _buttons[i].Position;
+                    position.x -= coordWidth + Margin;
+                    position.width = coordWidth;
+                    if (GUI.Button(position, (i + 1).ToString()))
+                        _setCoordAction(i);
+                }
+            }
         }
 
         private void DrawAccesoryButton(int accIndex, bool isOn)
