@@ -36,9 +36,14 @@ namespace KK_ClothingStateMenu
         [Browsable(false)]
         private ConfigWrapper<bool> Show { get; set; }
 
-        [DisplayName("Show coordinate change buttons")]
-        [Description("Adds buttons to the menu that allow quickly switching between clothing sets. Same as using the clothing dropdown.")]
+        [DisplayName("Show coordinate change buttons in chara maker")]
+        [Description("Adds buttons to the menu that allow quickly switching between clothing sets. Same as using the clothing dropdown.\n" +
+                     "The buttons are always shown outside of character maker.")]
         private ConfigWrapper<bool> ShowCoordinateButtons { get; set; }
+
+        [DisplayName("Show clothing state menu outside chara maker")]
+        [Description("Works for males in H scenes (the male has to be visible for the menu to appear) and in some conversations with girls.")]
+        private SavedKeyboardShortcut Keybind { get; set; }
 
         #region Entry point
 
@@ -50,6 +55,7 @@ namespace KK_ClothingStateMenu
 
             Show = new ConfigWrapper<bool>("Show", this, false);
             ShowCoordinateButtons = new ConfigWrapper<bool>("ShowCoordinateButtons", this, false);
+            Keybind = new SavedKeyboardShortcut("keybind", this, new KeyboardShortcut(KeyCode.Tab, KeyCode.LeftShift));
 
             KoikatuAPI.CheckIncompatiblePlugin(this, "MoreAccessories_CSM");
 
@@ -59,6 +65,7 @@ namespace KK_ClothingStateMenu
 
         private void MakerAPI_Exit(object sender, EventArgs e)
         {
+            _showInterface = false;
             _chaCtrl = null;
             _setCoordAction = null;
         }
@@ -75,54 +82,55 @@ namespace KK_ClothingStateMenu
         private bool _showInterface;
         private bool ShowInterface
         {
-            // TODO use makerapi instead when new version comes out
-            get => _showInterface && _chaCtrl != null &&
-                (string.IsNullOrEmpty(Manager.Scene.Instance.AddSceneName) || Manager.Scene.Instance.AddSceneName == "CustomScene") &&
-                !Manager.Scene.Instance.IsNowLoadingFade &&
-                !MakerAPI.GetMakerBase().customCtrl.hideFrontUI;
+            get
+            {
+                if (!_showInterface) return false;
+
+                return CanShow();
+            }
             set
             {
                 _showInterface = value;
-                Show.Value = value;
+
+                if (MakerAPI.InsideMaker)
+                    Show.Value = value;
 
                 _chaCtrl = null;
                 _buttons.Clear();
 
                 if (!_showInterface) return;
 
-                _chaCtrl = MakerAPI.GetCharacterControl();
+                FindTargetCharacter();
 
-                SetupCoordButtons();
-
-                var position = GetDisplayRect();
-                foreach (ChaFileDefine.ClothesKind kind in Enum.GetValues(typeof(ChaFileDefine.ClothesKind)))
+                if (!CanShow())
                 {
-                    if (kind == ChaFileDefine.ClothesKind.shoes_outer) continue;
-                    _buttons.Add(new ClothButton(position, kind, _chaCtrl));
-                    position.y += Height;
+                    _showInterface = false;
+                    return;
                 }
 
-                _accesorySlotsRect = _buttons.Last().Position;
-                _accesorySlotsRect.x = _accesorySlotsRect.x + 7;
-                _accesorySlotsRect.width = _accesorySlotsRect.width - 7;
-                _accesorySlotsRect.y = _accesorySlotsRect.y + (Height + Margin);
-                _accesorySlotsRect.height = 300f;
+                SetupCoordButtons();
+                SetupAccRect();
             }
         }
 
-        private void SetupCoordButtons()
+        private bool CanShow()
         {
-            var customControl = MakerAPI.GetMakerBase().customCtrl;
-            var coordDropdown = typeof(CustomControl).GetField("ddCoordinate", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(customControl);
-            var coordProp = coordDropdown?.GetType().GetProperty("value", BindingFlags.Instance | BindingFlags.Public);
-            _setCoordAction = newVal => coordProp?.SetValue(coordDropdown, newVal, null);
+            if (_chaCtrl == null) return false;
+            if (!_chaCtrl.visibleAll) return false;
+
+            if (MakerAPI.InsideMaker && MakerAPI.GetMakerBase().customCtrl.hideFrontUI) return false;
+
+            if (Manager.Scene.Instance.AddSceneName == "Config") return false;
+            if (Manager.Scene.Instance.AddSceneName != Manager.Scene.Instance.AddSceneNameOverlapRemoved) return false;
+            if (Manager.Scene.Instance.IsNowLoadingFade) return false;
+
+            return true;
         }
 
-        private static Rect GetDisplayRect()
+        private void Update()
         {
-            var distanceFromRightEdge = Screen.width / 10f;
-            var x = Screen.width - distanceFromRightEdge - Width - Margin;
-            return new Rect(x, Margin, Width, Height);
+            if (!MakerAPI.InsideMaker && Keybind.IsDown())
+                ShowInterface = !ShowInterface;
         }
 
         private void OnGUI()
@@ -159,20 +167,20 @@ namespace KK_ClothingStateMenu
                         }
 
                         var charaMakerData = MoreAccessories._self._charaMakerData;
-                        if (charaMakerData?.showAccessories == null)
-                            return;
-
-                        var showAccessories = MoreAccessories._self._charaMakerData.showAccessories;
-                        for (var k = 0; k < showAccessories.Count; k++)
-                            DrawAccesoryButton(k + 20, showAccessories[k]);
+                        if (charaMakerData?.showAccessories != null)
+                        {
+                            var showAccessories = charaMakerData.showAccessories;
+                            for (var k = 0; k < showAccessories.Count; k++)
+                                DrawAccesoryButton(k + 20, showAccessories[k]);
+                        }
                     }
                     GUILayout.EndVertical();
                 }
                 GUILayout.EndScrollView();
             }
             GUILayout.EndArea();
-            
-            if (ShowCoordinateButtons.Value)
+
+            if (!MakerAPI.InsideMaker || ShowCoordinateButtons.Value)
             {
                 const float coordWidth = 25f;
 
@@ -192,6 +200,75 @@ namespace KK_ClothingStateMenu
             if (GUILayout.Button($"Slot {accIndex}: {(isOn ? "On" : "Off")}"))
                 _chaCtrl.SetAccessoryState(accIndex, !isOn);
             GUILayout.Space(-5);
+        }
+
+        private void FindTargetCharacter()
+        {
+            _chaCtrl = MakerAPI.GetCharacterControl();
+            if (_chaCtrl != null) return;
+
+            var hFlag = FindObjectOfType<HFlag>();
+            if (hFlag != null) _chaCtrl = hFlag.player.chaCtrl;
+            else _chaCtrl = GetCurrentVisibleGirl()?.chaCtrl;
+        }
+
+        private static SaveData.Heroine GetCurrentVisibleGirl()
+        {
+            var result = FindObjectOfType<TalkScene>()?.targetHeroine;
+            if (result != null)
+                return result;
+
+            try
+            {
+                var nowScene = Manager.Game.Instance?.actScene?.AdvScene?.nowScene;
+                if (!nowScene) return null;
+
+                var advSceneTargetHeroineProp = typeof(ADV.ADVScene).GetField("m_TargetHeroine", BindingFlags.Instance | BindingFlags.NonPublic);
+                return advSceneTargetHeroineProp?.GetValue(nowScene) as SaveData.Heroine;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private void SetupCoordButtons()
+        {
+            var position = GetDisplayRect();
+            foreach (ChaFileDefine.ClothesKind kind in Enum.GetValues(typeof(ChaFileDefine.ClothesKind)))
+            {
+                if (kind == ChaFileDefine.ClothesKind.shoes_outer) continue;
+                _buttons.Add(new ClothButton(position, kind, _chaCtrl));
+                position.y += Height;
+            }
+
+            var customControl = MakerAPI.GetMakerBase()?.customCtrl;
+            if (customControl != null)
+            {
+                var coordDropdown = typeof(CustomControl).GetField("ddCoordinate", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(customControl);
+                var coordProp = coordDropdown?.GetType().GetProperty("value", BindingFlags.Instance | BindingFlags.Public);
+                _setCoordAction = newVal => coordProp?.SetValue(coordDropdown, newVal, null);
+            }
+            else
+            {
+                _setCoordAction = newVal => _chaCtrl.ChangeCoordinateTypeAndReload((ChaFileDefine.CoordinateType)newVal);
+            }
+        }
+
+        private void SetupAccRect()
+        {
+            _accesorySlotsRect = _buttons.Last().Position;
+            _accesorySlotsRect.x = _accesorySlotsRect.x + 7;
+            _accesorySlotsRect.width = _accesorySlotsRect.width - 7;
+            _accesorySlotsRect.y = _accesorySlotsRect.y + (Height + Margin);
+            _accesorySlotsRect.height = 300f;
+        }
+
+        private static Rect GetDisplayRect()
+        {
+            var distanceFromRightEdge = Screen.width / 10f;
+            var x = Screen.width - distanceFromRightEdge - Width - Margin;
+            return new Rect(x, Margin, Width, Height);
         }
     }
 }
