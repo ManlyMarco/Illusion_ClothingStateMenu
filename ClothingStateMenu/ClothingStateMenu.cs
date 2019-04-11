@@ -197,7 +197,7 @@ namespace KK_ClothingStateMenu
 
         private void DrawAccesoryButton(int accIndex, bool isOn)
         {
-            if (GUILayout.Button($"Slot {accIndex}: {(isOn ? "On" : "Off")}"))
+            if (GUILayout.Button($"Slot {accIndex + 1}: {(isOn ? "On" : "Off")}"))
                 _chaCtrl.SetAccessoryState(accIndex, !isOn);
             GUILayout.Space(-5);
         }
