@@ -20,7 +20,7 @@ namespace KK_ClothingStateMenu
     [BepInProcess("Koikatu")]
     public class ClothingStateMenu : BaseUnityPlugin
     {
-        internal const string Version = "2.1";
+        internal const string Version = "2.2";
 
         private const float Height = 20f;
         private const float Margin = 5f;
