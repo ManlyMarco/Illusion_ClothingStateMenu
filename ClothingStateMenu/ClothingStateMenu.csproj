@@ -67,8 +67,10 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BodyButton.cs" />
     <Compile Include="ClothButton.cs" />
     <Compile Include="ClothingStateMenu.cs" />
+    <Compile Include="IStateToggleButton.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

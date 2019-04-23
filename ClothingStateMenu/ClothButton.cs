@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace KK_ClothingStateMenu
 {
-    public struct ClothButton
+    public struct ClothButton : IStateToggleButton
     {
         private static readonly Dictionary<ChaFileDefine.ClothesKind, string> _fancyKindNames = new Dictionary<ChaFileDefine.ClothesKind, string>
         {
@@ -28,7 +28,7 @@ namespace KK_ClothingStateMenu
 
         public string Text => $"{_fancyName} - {_fancyStateNames[GetState()]}";
 
-        public readonly Rect Position;
+        public Rect Position { get; }
         public readonly ChaFileDefine.ClothesKind Kind;
 
         private readonly ChaControl _chaCtrl;
@@ -36,12 +36,12 @@ namespace KK_ClothingStateMenu
 
         public void NextState()
         {
-            _chaCtrl.SetClothesStateNext((int) Kind);
+            _chaCtrl.SetClothesStateNext((int)Kind);
         }
 
         public int GetState()
         {
-            return _chaCtrl.fileStatus.clothesState[(int) Kind];
+            return _chaCtrl.fileStatus.clothesState[(int)Kind];
         }
 
         public ClothButton(Rect position, ChaFileDefine.ClothesKind kind, ChaControl chaCtrl) : this()

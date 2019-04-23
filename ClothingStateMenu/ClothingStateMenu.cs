@@ -26,7 +26,7 @@ namespace KK_ClothingStateMenu
         private const float Margin = 5f;
         private const float Width = 117f;
 
-        private readonly List<ClothButton> _buttons = new List<ClothButton>();
+        private readonly List<IStateToggleButton> _buttons = new List<IStateToggleButton>();
 
         private Vector2 _accessorySlotsScrollPos = Vector2.zero;
         private Rect _accesorySlotsRect;
@@ -49,7 +49,7 @@ namespace KK_ClothingStateMenu
 
         private void Start()
         {
-            if (!KoikatuAPI.CheckRequiredPlugin(this, KoikatuAPI.GUID, new Version(KoikatuAPI.VersionConst)) ||
+            if (!KoikatuAPI.CheckRequiredPlugin(this, KoikatuAPI.GUID, new Version("1.2")) ||
                 !KoikatuAPI.CheckRequiredPlugin(this, "com.joan6694.illusionplugins.moreaccessories", new Version("1.0.3")))
                 return;
 
@@ -102,7 +102,7 @@ namespace KK_ClothingStateMenu
 
                 FindTargetCharacter();
 
-                if (!CanShow())
+                if (!MakerAPI.InsideMaker && !CanShow())
                 {
                     _showInterface = false;
                     return;
@@ -241,6 +241,9 @@ namespace KK_ClothingStateMenu
                 _buttons.Add(new ClothButton(position, kind, _chaCtrl));
                 position.y += Height;
             }
+
+            if (MakerAPI.InsideMaker)
+                _buttons.Add(new BodyButton(_chaCtrl, position));
 
             var customControl = MakerAPI.GetMakerBase()?.customCtrl;
             if (customControl != null)
