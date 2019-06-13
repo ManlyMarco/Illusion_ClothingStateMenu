@@ -8,6 +8,7 @@ using ChaCustom;
 using KKAPI;
 using KKAPI.Maker;
 using KKAPI.Maker.UI.Sidebar;
+using KKAPI.Studio;
 using MoreAccessoriesKOI;
 using UniRx;
 using UnityEngine;
@@ -17,10 +18,9 @@ namespace KK_ClothingStateMenu
     [BepInPlugin("KK_ClothingStateMenu", "Clothing State Menu", Version)]
     [BepInDependency("com.joan6694.illusionplugins.moreaccessories")]
     [BepInDependency(KoikatuAPI.GUID)]
-    [BepInProcess("Koikatu")]
     public class ClothingStateMenu : BaseUnityPlugin
     {
-        internal const string Version = "2.3";
+        internal const string Version = "2.3.1";
 
         private const float Height = 20f;
         private const float Margin = 5f;
@@ -52,6 +52,12 @@ namespace KK_ClothingStateMenu
             if (!KoikatuAPI.CheckRequiredPlugin(this, KoikatuAPI.GUID, new Version("1.2")) ||
                 !KoikatuAPI.CheckRequiredPlugin(this, "com.joan6694.illusionplugins.moreaccessories", new Version("1.0.3")))
                 return;
+
+            if(StudioAPI.InsideStudio)
+            {
+                enabled = false;
+                return;
+            }
 
             Show = new ConfigWrapper<bool>("Show", this, false);
             ShowCoordinateButtons = new ConfigWrapper<bool>("ShowCoordinateButtons", this, false);
