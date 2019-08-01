@@ -224,18 +224,22 @@ namespace KK_ClothingStateMenu
             if (result != null)
                 return result;
 
-            try
-            {
-                var nowScene = Manager.Game.Instance?.actScene?.AdvScene?.nowScene;
-                if (!nowScene) return null;
+            var advScene = Manager.Game.Instance?.actScene?.AdvScene;
 
-                var advSceneTargetHeroineProp = typeof(ADV.ADVScene).GetField("m_TargetHeroine", BindingFlags.Instance | BindingFlags.NonPublic);
-                return advSceneTargetHeroineProp?.GetValue(nowScene) as SaveData.Heroine;
-            }
-            catch
+            if (advScene != null)
             {
-                return null;
+                if (advScene.Scenario?.currentHeroine != null) return advScene.Scenario.currentHeroine;
+
+                try
+                {
+                    var advSceneTargetHeroineProp = typeof(ADV.ADVScene).GetField("m_TargetHeroine", BindingFlags.Instance | BindingFlags.NonPublic);
+                    return advSceneTargetHeroineProp?.GetValue(advScene.nowScene) as SaveData.Heroine;
+                }
+                catch
+                {
+                }
             }
+            return null;
         }
 
         private void SetupCoordButtons()
