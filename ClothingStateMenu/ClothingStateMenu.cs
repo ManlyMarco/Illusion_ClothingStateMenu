@@ -215,27 +215,41 @@ namespace KK_ClothingStateMenu
 
             var hFlag = FindObjectOfType<HFlag>();
             if (hFlag != null) _chaCtrl = hFlag.player.chaCtrl;
-            else _chaCtrl = GetCurrentVisibleGirl()?.chaCtrl;
+            else _chaCtrl = GetCurrentVisibleGirl();
         }
 
-        private static SaveData.Heroine GetCurrentVisibleGirl()
+        private static ChaControl GetCurrentVisibleGirl()
         {
             var result = FindObjectOfType<TalkScene>()?.targetHeroine;
             if (result != null)
-                return result;
+                return result.chaCtrl;
 
-            try
-            {
-                var nowScene = Manager.Game.Instance?.actScene?.AdvScene?.nowScene;
-                if (!nowScene) return null;
+            var advScene = Manager.Game.Instance?.actScene?.AdvScene;
 
-                var advSceneTargetHeroineProp = typeof(ADV.ADVScene).GetField("m_TargetHeroine", BindingFlags.Instance | BindingFlags.NonPublic);
-                return advSceneTargetHeroineProp?.GetValue(nowScene) as SaveData.Heroine;
-            }
-            catch
+            if (advScene != null)
             {
-                return null;
+                if (advScene.Scenario?.currentHeroine != null) return advScene.Scenario.currentHeroine.chaCtrl;
+
+                try
+                {
+                    var advSceneTargetHeroineProp = typeof(ADV.ADVScene).GetField("m_TargetHeroine", BindingFlags.Instance | BindingFlags.NonPublic);
+                    return (advSceneTargetHeroineProp?.GetValue(advScene.nowScene) as SaveData.Heroine).chaCtrl;
+                }
+                catch
+                {
+                }
             }
+
+            // In event
+            var character = Manager.Character.Instance;
+            if (character != null && character.dictEntryChara.Count > 0)
+            {
+                // Main event char is usually (not always) the first one.
+                // Also will pull the currently visible character, like the teacher or the mom.
+                return character.dictEntryChara[0];
+            }
+
+            return null;
         }
 
         private void SetupCoordButtons()
