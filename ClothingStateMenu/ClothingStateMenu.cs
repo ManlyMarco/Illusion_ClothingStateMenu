@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using BepInEx;
+using BepInEx.Configuration;
 using ChaCustom;
 using KKAPI;
 using KKAPI.Maker;
@@ -16,8 +17,9 @@ using UnityEngine;
 namespace KK_ClothingStateMenu
 {
     [BepInPlugin("KK_ClothingStateMenu", "Clothing State Menu", Version)]
-    [BepInDependency("com.joan6694.illusionplugins.moreaccessories")]
-    [BepInDependency(KoikatuAPI.GUID)]
+    [BepInDependency("com.joan6694.illusionplugins.moreaccessories", "1.0.3")]
+    [BepInDependency(KoikatuAPI.GUID, "1.2")]
+    [BepInIncompatibility("MoreAccessories_CSM")]
     public class ClothingStateMenu : BaseUnityPlugin
     {
         internal const string Version = "2.3.1";
@@ -34,36 +36,30 @@ namespace KK_ClothingStateMenu
         private ChaControl _chaCtrl;
 
         [Browsable(false)]
-        private ConfigWrapper<bool> Show { get; set; }
+        private ConfigEntry<bool> Show { get; set; }
 
         [DisplayName("Show coordinate change buttons in chara maker")]
         [Description("Adds buttons to the menu that allow quickly switching between clothing sets. Same as using the clothing dropdown.\n" +
                      "The buttons are always shown outside of character maker.")]
-        private ConfigWrapper<bool> ShowCoordinateButtons { get; set; }
+        private ConfigEntry<bool> ShowCoordinateButtons { get; set; }
 
         [DisplayName("Show clothing state menu outside chara maker")]
         [Description("Works for males in H scenes (the male has to be visible for the menu to appear) and in some conversations with girls.")]
-        private SavedKeyboardShortcut Keybind { get; set; }
+        private ConfigEntry<BepInEx.Configuration.KeyboardShortcut> Keybind { get; set; }
 
         #region Entry point
 
         private void Start()
         {
-            if (!KoikatuAPI.CheckRequiredPlugin(this, KoikatuAPI.GUID, new Version("1.2")) ||
-                !KoikatuAPI.CheckRequiredPlugin(this, "com.joan6694.illusionplugins.moreaccessories", new Version("1.0.3")))
-                return;
-
             if(StudioAPI.InsideStudio)
             {
                 enabled = false;
                 return;
             }
 
-            Show = new ConfigWrapper<bool>("Show", this, false);
-            ShowCoordinateButtons = new ConfigWrapper<bool>("ShowCoordinateButtons", this, false);
-            Keybind = new SavedKeyboardShortcut("keybind", this, new KeyboardShortcut(KeyCode.Tab, KeyCode.LeftShift));
-
-            KoikatuAPI.CheckIncompatiblePlugin(this, "MoreAccessories_CSM");
+            Show = Config.Bind("General", "Show", false);
+            ShowCoordinateButtons = Config.Bind("General", "ShowCoordinateButtons", false);
+            Keybind = Config.Bind("Keyboard shortcuts", "keybind", new BepInEx.Configuration.KeyboardShortcut(KeyCode.Tab, KeyCode.LeftShift));
 
             MakerAPI.RegisterCustomSubCategories += MakerAPI_Enter;
             MakerAPI.MakerExiting += MakerAPI_Exit;
@@ -135,7 +131,7 @@ namespace KK_ClothingStateMenu
 
         private void Update()
         {
-            if (!MakerAPI.InsideMaker && Keybind.IsDown())
+            if (!MakerAPI.InsideMaker && Keybind.Value.IsDown())
                 ShowInterface = !ShowInterface;
         }
 
