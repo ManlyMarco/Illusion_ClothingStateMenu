@@ -53,7 +53,7 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="MoreAccessories, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\IllusionLibs.Koikatu.MoreAccessories.2019.4.27\lib\net35\MoreAccessories.dll</HintPath>
+      <HintPath>..\packages\IllusionLibs.Koikatu.MoreAccessories.1.0.7\lib\net35\MoreAccessories.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
