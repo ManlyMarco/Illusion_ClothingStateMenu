@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace KK_ClothingStateMenu
+namespace ClothingStateMenu
 {
     public interface IStateToggleButton
     {

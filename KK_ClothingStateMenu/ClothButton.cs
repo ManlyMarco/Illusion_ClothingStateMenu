@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-namespace KK_ClothingStateMenu
+namespace ClothingStateMenu
 {
-    public struct ClothButton : IStateToggleButton
+    public readonly struct ClothButton : IStateToggleButton
     {
         private static readonly Dictionary<ChaFileDefine.ClothesKind, string> _fancyKindNames = new Dictionary<ChaFileDefine.ClothesKind, string>
         {

@@ -12,7 +12,7 @@ using MoreAccessoriesKOI;
 using UniRx;
 using UnityEngine;
 
-namespace KK_ClothingStateMenu
+namespace ClothingStateMenu
 {
     [BepInPlugin("KK_ClothingStateMenu", "Clothing State Menu", Version)]
     [BepInProcess("Koikatu")]
@@ -20,7 +20,7 @@ namespace KK_ClothingStateMenu
     [BepInIncompatibility("MoreAccessories_CSM")]
     [BepInDependency("com.joan6694.illusionplugins.moreaccessories", "1.0.3")]
     [BepInDependency(KoikatuAPI.GUID, "1.5")]
-    public class ClothingStateMenu : BaseUnityPlugin
+    public class ClothingStateMenuPlugin : BaseUnityPlugin
     {
         internal const string Version = "2.3.2";
 

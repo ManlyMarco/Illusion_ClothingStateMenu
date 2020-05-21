@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace KK_ClothingStateMenu
+namespace ClothingStateMenu
 {
     public struct BodyButton : IStateToggleButton
     {
