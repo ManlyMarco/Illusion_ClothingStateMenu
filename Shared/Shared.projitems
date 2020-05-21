@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>e2f7c946-51a2-4d1f-b57c-557638c47bd6</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>Shared</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)AssemblyInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)BodyButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ClothButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ClothingStateMenuPlugin.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IStateToggleButton.cs" />
+  </ItemGroup>
+</Project>

@@ -63,14 +63,13 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BodyButton.cs" />
-    <Compile Include="ClothButton.cs" />
-    <Compile Include="ClothingStateMenuPlugin.cs" />
-    <Compile Include="IStateToggleButton.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ClothingStateMenuPlugin.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
+  <Import Project="..\Shared\Shared.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

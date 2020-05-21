@@ -14,8 +14,13 @@ namespace ClothingStateMenu
             {ChaFileDefine.ClothesKind.gloves, "Gloves"},
             {ChaFileDefine.ClothesKind.panst, "Pantyhose"},
             {ChaFileDefine.ClothesKind.socks, "Legwear"},
+#if KK
+            
             {ChaFileDefine.ClothesKind.shoes_inner, "Shoes"},
             {ChaFileDefine.ClothesKind.shoes_outer, "Shoes"}
+#elif EC
+            {ChaFileDefine.ClothesKind.shoes, "Shoes"},
+#endif
         };
 
         private static readonly Dictionary<int, string> _fancyStateNames = new Dictionary<int, string>
