@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using BepInEx;
+using BepInEx.Configuration;
 using ChaCustom;
 using KKAPI;
 using KKAPI.Maker;
 using KKAPI.Maker.UI.Sidebar;
-using KKAPI.Studio;
 using MoreAccessoriesKOI;
 using UniRx;
 using UnityEngine;
@@ -16,11 +15,14 @@ using UnityEngine;
 namespace KK_ClothingStateMenu
 {
     [BepInPlugin("KK_ClothingStateMenu", "Clothing State Menu", Version)]
-    [BepInDependency("com.joan6694.illusionplugins.moreaccessories")]
-    [BepInDependency(KoikatuAPI.GUID)]
+    [BepInProcess("Koikatu")]
+    [BepInProcess("Koikatsu Party")]
+    [BepInIncompatibility("MoreAccessories_CSM")]
+    [BepInDependency("com.joan6694.illusionplugins.moreaccessories", "1.0.3")]
+    [BepInDependency(KoikatuAPI.GUID, "1.5")]
     public class ClothingStateMenu : BaseUnityPlugin
     {
-        internal const string Version = "2.3.1";
+        internal const string Version = "2.3.2";
 
         private const float Height = 20f;
         private const float Margin = 5f;
@@ -33,84 +35,92 @@ namespace KK_ClothingStateMenu
 
         private ChaControl _chaCtrl;
 
-        [Browsable(false)]
-        private ConfigWrapper<bool> Show { get; set; }
-
-        [DisplayName("Show coordinate change buttons in chara maker")]
-        [Description("Adds buttons to the menu that allow quickly switching between clothing sets. Same as using the clothing dropdown.\n" +
-                     "The buttons are always shown outside of character maker.")]
-        private ConfigWrapper<bool> ShowCoordinateButtons { get; set; }
-
-        [DisplayName("Show clothing state menu outside chara maker")]
-        [Description("Works for males in H scenes (the male has to be visible for the menu to appear) and in some conversations with girls.")]
-        private SavedKeyboardShortcut Keybind { get; set; }
+        private ConfigEntry<bool> ShowInMaker { get; set; }
+        private ConfigEntry<bool> ShowCoordinateButtons { get; set; }
+        private ConfigEntry<KeyboardShortcut> Keybind { get; set; }
 
         #region Entry point
 
         private void Start()
         {
-            if (!KoikatuAPI.CheckRequiredPlugin(this, KoikatuAPI.GUID, new Version("1.2")) ||
-                !KoikatuAPI.CheckRequiredPlugin(this, "com.joan6694.illusionplugins.moreaccessories", new Version("1.0.3")))
-                return;
-
-            if(StudioAPI.InsideStudio)
+            ShowInMaker = Config.Bind("General", "Show in Character Maker", false, "Show the clothing state menu in character maker. Can be enabled from maker interface or by pressing the keyboard shortcut.");
+            ShowInMaker.SettingChanged += (sender, args) =>
             {
-                enabled = false;
-                return;
-            }
+                if (MakerAPI.InsideMaker)
+                    ShowInterface = ShowInMaker.Value;
+            };
 
-            Show = new ConfigWrapper<bool>("Show", this, false);
-            ShowCoordinateButtons = new ConfigWrapper<bool>("ShowCoordinateButtons", this, false);
-            Keybind = new SavedKeyboardShortcut("keybind", this, new KeyboardShortcut(KeyCode.Tab, KeyCode.LeftShift));
+            ShowCoordinateButtons = Config.Bind("General", "Show coordinate change buttons in Character Maker", false, "Adds buttons to the menu that allow quickly switching between clothing sets. Same as using the clothing dropdown.\nThe buttons are always shown outside of character maker.");
+            ShowCoordinateButtons.SettingChanged += (sender, args) =>
+            {
+                if (ShowInterface)
+                    ShowInterface = true;
+            };
 
-            KoikatuAPI.CheckIncompatiblePlugin(this, "MoreAccessories_CSM");
-
-            MakerAPI.RegisterCustomSubCategories += MakerAPI_Enter;
-            MakerAPI.MakerExiting += MakerAPI_Exit;
-        }
-
-        private void MakerAPI_Exit(object sender, EventArgs e)
-        {
-            _showInterface = false;
-            _chaCtrl = null;
-            _setCoordAction = null;
-        }
-
-        private void MakerAPI_Enter(object sender, RegisterSubCategoriesEvent e)
-        {
-            e.AddSidebarControl(new SidebarToggle("Show clothing state menu", Show.Value, this)).ValueChanged.Subscribe(b => ShowInterface = b);
+            Keybind = Config.Bind("General", "Toggle clothing state menu", new KeyboardShortcut(KeyCode.Tab, KeyCode.LeftShift), "Keyboard shortcut to toggle the clothing state menu on and off.\nCan be used outside of character maker in some cases - works for males in H scenes (the male has to be visible for the menu to appear) and in some conversations with girls.");
+            
+            MakerAPI.RegisterCustomSubCategories += (sender, e) =>
+            {
+                _sidebarToggle = e.AddSidebarControl(new SidebarToggle("Show clothing state menu", ShowInMaker.Value, this));
+                _sidebarToggle.ValueChanged.Subscribe(b => ShowInterface = b);
+            };
+            MakerAPI.MakerExiting += (sender, e) =>
+            {
+                _chaCtrl = null;
+                _setCoordAction = null;
+                _sidebarToggle = null;
+            };
         }
 
         #endregion
 
         private Action<int> _setCoordAction;
 
-        private bool _showInterface;
+        private bool _showOutsideMaker;
+        private SidebarToggle _sidebarToggle;
+
         private bool ShowInterface
         {
             get
             {
-                if (!_showInterface) return false;
+                if (MakerAPI.InsideMaker)
+                {
+                    if (!ShowInMaker.Value)
+                        return false;
+                }
+                else
+                {
+                    if (!_showOutsideMaker)
+                        return false;
+                    if (_chaCtrl == null)
+                    {
+                        ShowInterface = false;
+                        return false;
+                    }
+                }
 
                 return CanShow();
             }
             set
             {
-                _showInterface = value;
-
                 if (MakerAPI.InsideMaker)
-                    Show.Value = value;
+                {
+                    ShowInMaker.Value = value;
+                    if (_sidebarToggle != null) _sidebarToggle.Value = value;
+                }
+                else
+                    _showOutsideMaker = value;
 
                 _chaCtrl = null;
                 _buttons.Clear();
 
-                if (!_showInterface) return;
+                if (!value) return;
 
                 FindTargetCharacter();
 
-                if (!MakerAPI.InsideMaker && !CanShow())
+                if (_chaCtrl == null)
                 {
-                    _showInterface = false;
+                    _showOutsideMaker = false;
                     return;
                 }
 
@@ -135,7 +145,7 @@ namespace KK_ClothingStateMenu
 
         private void Update()
         {
-            if (!MakerAPI.InsideMaker && Keybind.IsDown())
+            if (Keybind.Value.IsDown())
                 ShowInterface = !ShowInterface;
         }
 
