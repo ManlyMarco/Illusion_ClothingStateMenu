@@ -120,7 +120,6 @@ namespace ClothingStateMenu
                 }
 
                 SetupInterface();
-                SetupAccRect();
             }
         }
 
@@ -238,9 +237,9 @@ namespace ClothingStateMenu
 
             // Accessories
             _accesorySlotsRect = _buttons.Last().Position;
-            _accesorySlotsRect.x = _accesorySlotsRect.x + 7;
-            _accesorySlotsRect.width = _accesorySlotsRect.width - 7;
-            _accesorySlotsRect.y = _accesorySlotsRect.y + (Height + Margin);
+            _accesorySlotsRect.x += 7;
+            _accesorySlotsRect.width -= 7;
+            _accesorySlotsRect.y += Height + Margin;
             _accesorySlotsRect.height = 300f;
 
 #if KK
@@ -257,10 +256,6 @@ namespace ClothingStateMenu
                 _setCoordAction = newVal => _chaCtrl.ChangeCoordinateTypeAndReload((ChaFileDefine.CoordinateType)newVal);
             }
 #endif
-        }
-
-        private void SetupAccRect()
-        {
         }
     }
 }
