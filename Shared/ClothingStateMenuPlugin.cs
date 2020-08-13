@@ -5,6 +5,7 @@ using System.Reflection;
 using BepInEx;
 using BepInEx.Configuration;
 using ChaCustom;
+using HarmonyLib;
 using KKAPI.Maker;
 using KKAPI.Maker.UI.Sidebar;
 using UniRx;
@@ -36,6 +37,9 @@ namespace ClothingStateMenu
         private ConfigEntry<bool> ShowCoordinateButtons { get; set; }
         private Action<int> _setCoordAction;
 #endif
+
+        private Func<ChaFile, object> _getMoreaccsData;
+        private object _moreAccsObj;
 
         private ConfigEntry<KeyboardShortcut> Keybind { get; set; }
 
@@ -72,6 +76,27 @@ namespace ClothingStateMenu
 #endif
                 _sidebarToggle = null;
             };
+
+            var moreaccsType = Type.GetType("MoreAccessoriesKOI.MoreAccessories, MoreAccessories");
+            if (moreaccsType != null)
+            {
+                try
+                {
+                    _moreAccsObj = Traverse.Create(moreaccsType).Field("_self").GetValue();
+                    var dic = Traverse.Create(_moreAccsObj).Field("_accessoriesByChar").GetValue();
+                    var tryMethod = AccessTools.Method(dic.GetType(), "TryGetValue");
+                    _getMoreaccsData = control =>
+                    {
+                        var parameters = new object[] { control, null };
+                        tryMethod.Invoke(dic, parameters);
+                        return parameters[1];
+                    };
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex);
+                }
+            }
         }
 
         private bool ShowInterface
@@ -176,15 +201,29 @@ namespace ClothingStateMenu
                                 DrawAccesoryButton(j, showAccessory[j]);
                         }
 
-#if KK
-                        var charaMakerData = MoreAccessoriesKOI.MoreAccessories._self._charaMakerData;
-                        if (charaMakerData?.showAccessories != null)
+                        if (_getMoreaccsData != null)
                         {
-                            var showAccessories = charaMakerData.showAccessories;
-                            for (var k = 0; k < showAccessories.Count; k++)
-                                DrawAccesoryButton(k + 20, showAccessories[k]);
+                            try
+                            {
+                                var data = _getMoreaccsData(_chaCtrl.chaFile);
+                                if (data != null)
+                                {
+                                    var charAddDataTraverse = Traverse.Create(data);
+                                    var showAccessories = charAddDataTraverse.Field("showAccessories").GetValue<List<bool>>();
+                                    if (showAccessories != null)
+                                    {
+                                        var accObjects = charAddDataTraverse.Field("objAccessory").GetValue<List<GameObject>>();
+                                        for (int i = 0; i < showAccessories.Count; i++)
+                                        {
+                                            // Filter out empty slots
+                                            if (accObjects[i] != null)
+                                                DrawAccesoryButton(i + 20, showAccessories[i]);
+                                        }
+                                    }
+                                }
+                            }
+                            catch (Exception ex) { Console.WriteLine(ex); }
                         }
-#endif
                     }
                     GUILayout.EndVertical();
                 }
