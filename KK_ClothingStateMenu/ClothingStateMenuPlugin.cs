@@ -10,8 +10,7 @@ namespace ClothingStateMenu
     [BepInProcess("Koikatu")]
     [BepInProcess("Koikatsu Party")]
     [BepInIncompatibility("MoreAccessories_CSM")]
-    [BepInDependency("com.joan6694.illusionplugins.moreaccessories", "1.0.3")]
-    [BepInDependency(KoikatuAPI.GUID, "1.5")]
+    [BepInDependency(KoikatuAPI.GUID, KoikatuAPI.VersionConst)]
     public partial class ClothingStateMenuPlugin
     {
         private void FindTargetCharacter()

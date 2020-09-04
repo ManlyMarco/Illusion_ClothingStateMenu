@@ -6,7 +6,7 @@ namespace ClothingStateMenu
 {
     [BepInPlugin(GUID, "Clothing State Menu", Version)]
     [BepInProcess("EmotionCreators")]
-    [BepInDependency(KoikatuAPI.GUID, "1.5")]
+    [BepInDependency(KoikatuAPI.GUID, KoikatuAPI.VersionConst)]
     public partial class ClothingStateMenuPlugin
     {
         private void FindTargetCharacter()
