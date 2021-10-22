@@ -5,7 +5,7 @@ using KKAPI.Maker;
 namespace ClothingStateMenu
 {
     [BepInPlugin(GUID, "Clothing State Menu", Version)]
-    [BepInProcess("EmotionCreators")]
+    [BepInProcess(KoikatuAPI.GameProcessName)]
     [BepInDependency(KoikatuAPI.GUID, KoikatuAPI.VersionConst)]
     public partial class ClothingStateMenuPlugin
     {
