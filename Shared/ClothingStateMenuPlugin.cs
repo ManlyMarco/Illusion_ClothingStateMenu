@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using BepInEx;
 using BepInEx.Configuration;
-using ChaCustom;
-using HarmonyLib;
+using KKAPI;
 using KKAPI.Maker;
 using KKAPI.Maker.UI.Sidebar;
 using UniRx;
@@ -33,11 +31,11 @@ namespace ClothingStateMenu
         private bool _showOutsideMaker;
         private ConfigEntry<bool> ShowInMaker { get; set; }
 
-#if KK
+#if KK || KKS
         private ConfigEntry<bool> ShowCoordinateButtons { get; set; }
         private Action<int> _setCoordAction;
 #endif
-        
+
         private ConfigEntry<KeyboardShortcut> Keybind { get; set; }
 
         private void Start()
@@ -49,7 +47,7 @@ namespace ClothingStateMenu
                     ShowInterface = ShowInMaker.Value;
             };
 
-#if KK
+#if KK || KKS
             ShowCoordinateButtons = Config.Bind("General", "Show coordinate change buttons in Character Maker", false, "Adds buttons to the menu that allow quickly switching between clothing sets. Same as using the clothing dropdown.\nThe buttons are always shown outside of character maker.");
             ShowCoordinateButtons.SettingChanged += (sender, args) =>
             {
@@ -68,7 +66,7 @@ namespace ClothingStateMenu
             MakerAPI.MakerExiting += (sender, e) =>
             {
                 _chaCtrl = null;
-#if KK
+#if KK || KKS
                 _setCoordAction = null;
 #endif
                 _sidebarToggle = null;
@@ -131,9 +129,9 @@ namespace ClothingStateMenu
 
             if (MakerAPI.InsideMaker && !MakerAPI.IsInterfaceVisible()) return false;
 
-            if (Manager.Scene.Instance.AddSceneName == "Config") return false;
-            if (Manager.Scene.Instance.AddSceneName != Manager.Scene.Instance.AddSceneNameOverlapRemoved) return false;
-            if (Manager.Scene.Instance.IsNowLoadingFade) return false;
+            if (SceneApi.GetAddSceneName() == "Config") return false;
+            if (SceneApi.GetIsOverlap()) return false;
+            if (SceneApi.GetIsNowLoadingFade()) return false;
 
             return true;
         }
@@ -183,7 +181,7 @@ namespace ClothingStateMenu
             }
             GUILayout.EndArea();
 
-#if KK
+#if KK || KKS
             if (!MakerAPI.InsideMaker || ShowCoordinateButtons.Value)
             {
                 const float coordWidth = 25f;
@@ -209,14 +207,18 @@ namespace ClothingStateMenu
 
         private void SetupInterface()
         {
+#if KK || EC
             var distanceFromRightEdge = Screen.width / 10f;
+#elif KKS
+            var distanceFromRightEdge = Screen.width / 8.5f;
+#endif
             var x = Screen.width - distanceFromRightEdge - Width - Margin;
             var windowRect = new Rect(x, Margin, Width, Height);
 
             // Clothing piece state buttons
             foreach (ChaFileDefine.ClothesKind kind in Enum.GetValues(typeof(ChaFileDefine.ClothesKind)))
             {
-#if KK
+#if KK || KKS
                 if (kind == ChaFileDefine.ClothesKind.shoes_outer) continue;
 #endif
                 _buttons.Add(new ClothButton(windowRect, kind, _chaCtrl));
@@ -233,14 +235,13 @@ namespace ClothingStateMenu
             _accesorySlotsRect.y += Height + Margin;
             _accesorySlotsRect.height = 300f;
 
-#if KK
+#if KK || KKS
             // Coordinate change buttons
             var customControl = MakerAPI.GetMakerBase()?.customCtrl;
             if (customControl != null)
             {
-                var coordDropdown = typeof(CustomControl).GetField("ddCoordinate", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(customControl);
-                var coordProp = coordDropdown?.GetType().GetProperty("value", BindingFlags.Instance | BindingFlags.Public);
-                _setCoordAction = newVal => coordProp?.SetValue(coordDropdown, newVal, null);
+                var coordDropdown = customControl.ddCoordinate;
+                _setCoordAction = newVal => coordDropdown.value = newVal;
             }
             else
             {

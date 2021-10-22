@@ -14,7 +14,7 @@ namespace ClothingStateMenu
             {ChaFileDefine.ClothesKind.gloves, "Gloves"},
             {ChaFileDefine.ClothesKind.panst, "Pantyhose"},
             {ChaFileDefine.ClothesKind.socks, "Legwear"},
-#if KK
+#if KK || KKS
             
             {ChaFileDefine.ClothesKind.shoes_inner, "Shoes"},
             {ChaFileDefine.ClothesKind.shoes_outer, "Shoes"}
