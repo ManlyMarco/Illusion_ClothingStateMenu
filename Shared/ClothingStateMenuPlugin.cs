@@ -13,7 +13,7 @@ namespace ClothingStateMenu
 {
     public partial class ClothingStateMenuPlugin : BaseUnityPlugin
     {
-        public const string Version = "3.1";
+        public const string Version = "3.2";
         public const string GUID = "ClothingStateMenu";
 
         private const float Height = 20f;
@@ -27,13 +27,18 @@ namespace ClothingStateMenu
 
         private ChaControl _chaCtrl;
         private SidebarToggle _sidebarToggle;
+        private List<bool> showAccessoryMemory;
 
         private bool _showOutsideMaker;
         private ConfigEntry<bool> ShowInMaker { get; set; }
 
 #if KK || KKS
         private ConfigEntry<bool> ShowCoordinateButtons { get; set; }
+        private ConfigEntry<bool> RetainStatesBetweenOutfits { get; set; }
+        private ConfigEntry<bool> ShowVanillaButtons { get; set; }
         private Action<int> _setCoordAction;
+
+        private int coordMemory = -1;
 #endif
 
         private ConfigEntry<KeyboardShortcut> Keybind { get; set; }
@@ -48,6 +53,11 @@ namespace ClothingStateMenu
             };
 
 #if KK || KKS
+            ShowVanillaButtons = Config.Bind("General", "Show Vanilla Acc Buttons", true, "Show the vanilla \"Main\" and \"Sub\" accessory toggle buttons. Disabling them can free up some space for other things in the sidebar.");
+            ShowVanillaButtons.SettingChanged += (sender, args) => ToggleAccButtons(ShowVanillaButtons.Value);
+            RetainStatesBetweenOutfits = Config.Bind("General", "Retain Acc States Between Outfits", false, "Acc slots toggled off in one outfit will remain toggled off in others.\nIf disabled, the accs sync up to the vanilla buttons on outfit change.");
+            MakerAPI.MakerFinishedLoading += (sender, e) => { RegisterToggleEvents(); ToggleAccButtons(ShowVanillaButtons.Value); };
+
             ShowCoordinateButtons = Config.Bind("General", "Show coordinate change buttons in Character Maker", false, "Adds buttons to the menu that allow quickly switching between clothing sets. Same as using the clothing dropdown.\nThe buttons are always shown outside of character maker.");
             ShowCoordinateButtons.SettingChanged += (sender, args) =>
             {
@@ -140,6 +150,28 @@ namespace ClothingStateMenu
         {
             if (Keybind.Value.IsDown())
                 ShowInterface = !ShowInterface;
+
+            if (MakerAPI.InsideMaker && _chaCtrl != null)
+            {
+                var showAccessory = _chaCtrl.fileStatus.showAccessory;
+                if (showAccessoryMemory != null && showAccessory.Length == showAccessoryMemory.Count)
+                {
+                    for (int i = 0; i < showAccessoryMemory.Count; i++)
+                    {
+                        if (showAccessory[i] != showAccessoryMemory[i] && _chaCtrl.nowCoordinate.accessory.parts[i].type != 120)
+                        {
+                            _chaCtrl.SetAccessoryState(i, showAccessoryMemory[i]);
+                        }
+                    }
+                }
+                showAccessoryMemory = showAccessory.ToList();
+
+#if KK || KKS
+                if (coordMemory != _chaCtrl.fileStatus.coordinateType && !RetainStatesBetweenOutfits.Value)
+                    showAccessoryMemory.Clear();
+                coordMemory = _chaCtrl.fileStatus.coordinateType;
+#endif
+            }
         }
 
         private void OnGUI()
@@ -155,24 +187,29 @@ namespace ClothingStateMenu
 
             GUILayout.BeginArea(_accesorySlotsRect);
             {
-                var showAccessory = _chaCtrl.fileStatus.showAccessory;
-                if (showAccessory.Length > 1)
+                if (showAccessoryMemory.Count > 1)
                 {
                     if (GUILayout.Button("All accs On"))
+                    {
                         _chaCtrl.SetAccessoryStateAll(true);
+                        showAccessoryMemory.Clear();
+                    }
                     GUILayout.Space(-5);
                     if (GUILayout.Button("All accs Off"))
+                    {
                         _chaCtrl.SetAccessoryStateAll(false);
+                        showAccessoryMemory.Clear();
+                    }
                 }
 
                 _accessorySlotsScrollPos = GUILayout.BeginScrollView(_accessorySlotsScrollPos);
                 {
                     GUILayout.BeginVertical();
                     {
-                        for (var j = 0; j < showAccessory.Length; j++)
+                        for (var j = 0; j < showAccessoryMemory.Count; j++)
                         {
                             if (_chaCtrl.nowCoordinate.accessory.parts[j].type != 120)
-                                DrawAccesoryButton(j, showAccessory[j]);
+                                DrawAccesoryButton(j, showAccessoryMemory[j]);
                         }
                     }
                     GUILayout.EndVertical();
@@ -201,7 +238,10 @@ namespace ClothingStateMenu
         private void DrawAccesoryButton(int accIndex, bool isOn)
         {
             if (GUILayout.Button($"Slot {accIndex + 1}: {(isOn ? "On" : "Off")}"))
+            {
                 _chaCtrl.SetAccessoryState(accIndex, !isOn);
+                showAccessoryMemory[accIndex] = !isOn;
+            }    
             GUILayout.Space(-5);
         }
 
@@ -249,5 +289,30 @@ namespace ClothingStateMenu
             }
 #endif
         }
+
+#if KK || KKS
+        private void ToggleAccButtons(bool _state)
+        {
+            Transform root = UnityEngine.Object.FindObjectsOfType<GameObject>().Where(x => x.name == "txtClothesState").FirstOrDefault().transform.parent;
+            for (int i = 0; i < root.childCount; i++)
+            {
+                if (root.GetChild(i).gameObject.name == "txtAccessory")
+                {
+                    root.GetChild(i + 0).gameObject.SetActive(_state);
+                    root.GetChild(i + 1).gameObject.SetActive(_state);
+                    root.GetChild(i + 2).gameObject.SetActive(_state);
+                    break;
+                }
+            }
+        }
+
+        private void RegisterToggleEvents()
+        {
+            UnityEngine.UI.Toggle toggle1 = UnityEngine.Object.FindObjectsOfType<GameObject>().Where(x => x.name == "imgTglCol01").FirstOrDefault().GetComponent<UnityEngine.UI.Toggle>();
+            UnityEngine.UI.Toggle toggle2 = UnityEngine.Object.FindObjectsOfType<GameObject>().Where(x => x.name == "imgTglCol02").FirstOrDefault().GetComponent<UnityEngine.UI.Toggle>();
+            toggle1.onValueChanged.AddListener((x) => { showAccessoryMemory.Clear(); });
+            toggle2.onValueChanged.AddListener((x) => { showAccessoryMemory.Clear(); });
+        }
+#endif
     }
 }
