@@ -8,7 +8,6 @@ using KKAPI.Maker;
 using KKAPI.Maker.UI.Sidebar;
 using UniRx;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace ClothingStateMenu
 {
@@ -36,14 +35,10 @@ namespace ClothingStateMenu
 #if KK || KKS
         private ConfigEntry<bool> ShowCoordinateButtons { get; set; }
         private ConfigEntry<bool> RetainStatesBetweenOutfits { get; set; }
-        private ConfigEntry<bool> MoveVanillaButtons { get; set; }
-        private ConfigEntry<bool> ShowMainSub { get; set; }
+        private ConfigEntry<bool> ShowVanillaButtons { get; set; }
         private Action<int> _setCoordAction;
 
         private int coordMemory = -1;
-
-        private Toggle toggleMain;
-        private Toggle toggleSub;
 #endif
 
         private ConfigEntry<KeyboardShortcut> Keybind { get; set; }
@@ -58,14 +53,12 @@ namespace ClothingStateMenu
             };
 
 #if KK || KKS
-            ShowMainSub = Config.Bind("Options", "Show Main/Sub acc type in list", false, "Show in the toggle list whether an accessory's category is Main (M) or Sub (S).");
-            MoveVanillaButtons = Config.Bind("Options", "Move Vanilla Acc Buttons", false, "Move the vanilla \"Main\" and \"Sub\" accessory toggle buttons from the sidebar to the plugin menu.");
-            MoveVanillaButtons.SettingChanged += (sender, args) => ToggleAccButtons(!MoveVanillaButtons.Value);
-            RetainStatesBetweenOutfits = Config.Bind("Options", "Retain Acc States Between Outfits", false, "Acc slots toggled off in one outfit will remain toggled off in others.\nIf disabled, the accs sync up to the vanilla buttons on outfit change.");
-            MakerAPI.MakerFinishedLoading += (sender, args) => { RegisterToggleEvents(); ToggleAccButtons(!MoveVanillaButtons.Value);
-            };
+            ShowVanillaButtons = Config.Bind("General", "Show Vanilla Acc Buttons", true, "Show the vanilla \"Main\" and \"Sub\" accessory toggle buttons. Disabling them can free up some space for other things in the sidebar.");
+            ShowVanillaButtons.SettingChanged += (sender, args) => ToggleAccButtons(ShowVanillaButtons.Value);
+            RetainStatesBetweenOutfits = Config.Bind("General", "Retain Acc States Between Outfits", false, "Acc slots toggled off in one outfit will remain toggled off in others.\nIf disabled, the accs sync up to the vanilla buttons on outfit change.");
+            MakerAPI.MakerFinishedLoading += (sender, e) => { RegisterToggleEvents(); ToggleAccButtons(ShowVanillaButtons.Value); };
 
-            ShowCoordinateButtons = Config.Bind("Options", "Show coordinate change buttons in Character Maker", false, "Adds buttons to the menu that allow quickly switching between clothing sets. Same as using the clothing dropdown.\nThe buttons are always shown outside of character maker.");
+            ShowCoordinateButtons = Config.Bind("General", "Show coordinate change buttons in Character Maker", false, "Adds buttons to the menu that allow quickly switching between clothing sets. Same as using the clothing dropdown.\nThe buttons are always shown outside of character maker.");
             ShowCoordinateButtons.SettingChanged += (sender, args) =>
             {
                 if (ShowInterface)
@@ -209,17 +202,6 @@ namespace ClothingStateMenu
                     }
                 }
 
-#if KK || KKS
-                if (showAccessoryMemory.Count > 1 && MoveVanillaButtons.Value)
-                {
-                    if (GUILayout.Button("Main accs - " + (toggleMain.isOn ? "On" : "Off")))
-                        toggleMain.isOn = !toggleMain.isOn;
-                    GUILayout.Space(-5);
-                    if (GUILayout.Button("Sub accs - " + (toggleSub.isOn ? "On" : "Off")))
-                        toggleSub.isOn = !toggleSub.isOn; ;
-                }
-#endif
-
                 _accessorySlotsScrollPos = GUILayout.BeginScrollView(_accessorySlotsScrollPos);
                 {
                     GUILayout.BeginVertical();
@@ -255,12 +237,7 @@ namespace ClothingStateMenu
 
         private void DrawAccesoryButton(int accIndex, bool isOn)
         {
-#if KK || KKS
-            string optString = ShowMainSub.Value ? (_chaCtrl.nowCoordinate.accessory.parts[accIndex].hideCategory == 0 ? "M - " : "S - ") : "";
-#elif EC
-            string optString = "";
-#endif
-            if (GUILayout.Button($"Slot {accIndex + 1}: {optString}{(isOn ? "On" : "Off")}"))
+            if (GUILayout.Button($"Slot {accIndex + 1}: {(isOn ? "On" : "Off")}"))
             {
                 _chaCtrl.SetAccessoryState(accIndex, !isOn);
                 showAccessoryMemory[accIndex] = !isOn;
@@ -331,11 +308,10 @@ namespace ClothingStateMenu
 
         private void RegisterToggleEvents()
         {
-            toggleMain = FindObjectsOfType<GameObject>().Where(x => x.name == "imgTglCol01").FirstOrDefault().GetComponent<Toggle>();
-            toggleSub = FindObjectsOfType<GameObject>().Where(x => x.name == "imgTglCol02").FirstOrDefault().GetComponent<Toggle>();
-
-            toggleMain.onValueChanged.AddListener((x) => { showAccessoryMemory.Clear(); });
-            toggleSub.onValueChanged.AddListener((x) => { showAccessoryMemory.Clear(); });
+            UnityEngine.UI.Toggle toggle1 = UnityEngine.Object.FindObjectsOfType<GameObject>().Where(x => x.name == "imgTglCol01").FirstOrDefault().GetComponent<UnityEngine.UI.Toggle>();
+            UnityEngine.UI.Toggle toggle2 = UnityEngine.Object.FindObjectsOfType<GameObject>().Where(x => x.name == "imgTglCol02").FirstOrDefault().GetComponent<UnityEngine.UI.Toggle>();
+            toggle1.onValueChanged.AddListener((x) => { showAccessoryMemory.Clear(); });
+            toggle2.onValueChanged.AddListener((x) => { showAccessoryMemory.Clear(); });
         }
 #endif
     }
