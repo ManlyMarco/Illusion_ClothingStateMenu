@@ -37,6 +37,7 @@ namespace ClothingStateMenu
         private ConfigEntry<bool> ShowCoordinateButtons { get; set; }
         private ConfigEntry<bool> RetainStatesBetweenOutfits { get; set; }
         private ConfigEntry<bool> MoveVanillaButtons { get; set; }
+        private ConfigEntry<bool> ShowMainSub { get; set; }
         private Action<int> _setCoordAction;
 
         private int coordMemory = -1;
@@ -57,13 +58,14 @@ namespace ClothingStateMenu
             };
 
 #if KK || KKS
-            MoveVanillaButtons = Config.Bind("General", "Move Vanilla Acc Buttons", false, "Move the vanilla \"Main\" and \"Sub\" accessory toggle buttons from the sidebar to the plugin menu.");
+            ShowMainSub = Config.Bind("Options", "Show Main/Sub acc type in list", false, "Show in the toggle list whether an accessory's category is Main (M) or Sub (S).");
+            MoveVanillaButtons = Config.Bind("Options", "Move Vanilla Acc Buttons", false, "Move the vanilla \"Main\" and \"Sub\" accessory toggle buttons from the sidebar to the plugin menu.");
             MoveVanillaButtons.SettingChanged += (sender, args) => ToggleAccButtons(!MoveVanillaButtons.Value);
-            RetainStatesBetweenOutfits = Config.Bind("General", "Retain Acc States Between Outfits", false, "Acc slots toggled off in one outfit will remain toggled off in others.\nIf disabled, the accs sync up to the vanilla buttons on outfit change.");
+            RetainStatesBetweenOutfits = Config.Bind("Options", "Retain Acc States Between Outfits", false, "Acc slots toggled off in one outfit will remain toggled off in others.\nIf disabled, the accs sync up to the vanilla buttons on outfit change.");
             MakerAPI.MakerFinishedLoading += (sender, args) => { RegisterToggleEvents(); ToggleAccButtons(!MoveVanillaButtons.Value);
             };
 
-            ShowCoordinateButtons = Config.Bind("General", "Show coordinate change buttons in Character Maker", false, "Adds buttons to the menu that allow quickly switching between clothing sets. Same as using the clothing dropdown.\nThe buttons are always shown outside of character maker.");
+            ShowCoordinateButtons = Config.Bind("Options", "Show coordinate change buttons in Character Maker", false, "Adds buttons to the menu that allow quickly switching between clothing sets. Same as using the clothing dropdown.\nThe buttons are always shown outside of character maker.");
             ShowCoordinateButtons.SettingChanged += (sender, args) =>
             {
                 if (ShowInterface)
@@ -253,7 +255,12 @@ namespace ClothingStateMenu
 
         private void DrawAccesoryButton(int accIndex, bool isOn)
         {
-            if (GUILayout.Button($"Slot {accIndex + 1}: {(isOn ? "On" : "Off")}"))
+#if KK || KKS
+            string optString = ShowMainSub.Value ? (_chaCtrl.nowCoordinate.accessory.parts[accIndex].hideCategory == 0 ? "M - " : "S - ") : "";
+#elif EC
+            string optString = "";
+#endif
+            if (GUILayout.Button($"Slot {accIndex + 1}: {optString}{(isOn ? "On" : "Off")}"))
             {
                 _chaCtrl.SetAccessoryState(accIndex, !isOn);
                 showAccessoryMemory[accIndex] = !isOn;
