@@ -8,6 +8,7 @@ using KKAPI.Maker;
 using KKAPI.Maker.UI.Sidebar;
 using UniRx;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace ClothingStateMenu
 {
@@ -32,13 +33,25 @@ namespace ClothingStateMenu
         private bool _showOutsideMaker;
         private ConfigEntry<bool> ShowInMaker { get; set; }
 
+#if KK
+        private ConfigEntry<bool> MoveShoeButtons { get; set; }
+
+        private Toggle toggleIndoors;
+        private Toggle toggleOutdoors;
+
+        private const int shoeOffset = 25;
+#endif
 #if KK || KKS
         private ConfigEntry<bool> ShowCoordinateButtons { get; set; }
         private ConfigEntry<bool> RetainStatesBetweenOutfits { get; set; }
-        private ConfigEntry<bool> ShowVanillaButtons { get; set; }
+        private ConfigEntry<bool> MoveVanillaButtons { get; set; }
+        private ConfigEntry<bool> ShowMainSub { get; set; }
         private Action<int> _setCoordAction;
 
         private int coordMemory = -1;
+
+        private Toggle toggleMain;
+        private Toggle toggleSub;
 #endif
 
         private ConfigEntry<KeyboardShortcut> Keybind { get; set; }
@@ -51,14 +64,32 @@ namespace ClothingStateMenu
                 if (MakerAPI.InsideMaker)
                     ShowInterface = ShowInMaker.Value;
             };
-
+#if KK
+            MoveShoeButtons = Config.Bind("Options", "Move Shoe Type Buttons", false, "Move the vanilla shoe type buttons from the sidebar to the plugin menu.");
+            MoveShoeButtons.SettingChanged += (sender, args) =>
+            {
+                _accesorySlotsRect.position += (MoveShoeButtons.Value ? 1 : -1) * new Vector2(0, shoeOffset);
+                ToggleShoeButtons(!MoveShoeButtons.Value);
+            };
+#endif
 #if KK || KKS
-            ShowVanillaButtons = Config.Bind("General", "Show Vanilla Acc Buttons", true, "Show the vanilla \"Main\" and \"Sub\" accessory toggle buttons. Disabling them can free up some space for other things in the sidebar.");
-            ShowVanillaButtons.SettingChanged += (sender, args) => ToggleAccButtons(ShowVanillaButtons.Value);
-            RetainStatesBetweenOutfits = Config.Bind("General", "Retain Acc States Between Outfits", false, "Acc slots toggled off in one outfit will remain toggled off in others.\nIf disabled, the accs sync up to the vanilla buttons on outfit change.");
-            MakerAPI.MakerFinishedLoading += (sender, e) => { RegisterToggleEvents(); ToggleAccButtons(ShowVanillaButtons.Value); };
+            ShowMainSub = Config.Bind("Options", "Show Main/Sub acc type in list", false, "Show in the toggle list whether an accessory's category is Main (M) or Sub (S).");
+            MoveVanillaButtons = Config.Bind("Options", "Move Vanilla Acc Buttons", false, "Move the vanilla \"Main\" and \"Sub\" accessory toggle buttons from the sidebar to the plugin menu.");
+            MoveVanillaButtons.SettingChanged += (sender, args) => ToggleAccButtons(!MoveVanillaButtons.Value);
+            RetainStatesBetweenOutfits = Config.Bind("Options", "Retain Acc States Between Outfits", false, "Acc slots toggled off in one outfit will remain toggled off in others.\nIf disabled, the accs sync up to the vanilla buttons on outfit change.");
+            MakerAPI.MakerFinishedLoading += (sender, args) =>
+            {
+                RegisterToggleEvents();
+                ToggleAccButtons(!MoveVanillaButtons.Value);
+#if KK
+                if (MoveShoeButtons.Value) _accesorySlotsRect.position += new Vector2(0, shoeOffset);
+                toggleIndoors = FindObjectsOfType<Transform>().Where(x => x.name == "rbShoesType").FirstOrDefault().GetChild(0).GetComponent<Toggle>();
+                toggleOutdoors = FindObjectsOfType<Transform>().Where(x => x.name == "rbShoesType").FirstOrDefault().GetChild(1).GetComponent<Toggle>();
+                ToggleShoeButtons(!MoveShoeButtons.Value);
+#endif
+            };
 
-            ShowCoordinateButtons = Config.Bind("General", "Show coordinate change buttons in Character Maker", false, "Adds buttons to the menu that allow quickly switching between clothing sets. Same as using the clothing dropdown.\nThe buttons are always shown outside of character maker.");
+            ShowCoordinateButtons = Config.Bind("Options", "Show coordinate change buttons in Character Maker", false, "Adds buttons to the menu that allow quickly switching between clothing sets. Same as using the clothing dropdown.\nThe buttons are always shown outside of character maker.");
             ShowCoordinateButtons.SettingChanged += (sender, args) =>
             {
                 if (ShowInterface)
@@ -184,7 +215,26 @@ namespace ClothingStateMenu
                 if (GUI.Button(clothButton.Position, clothButton.Text))
                     clothButton.NextState();
             }
-
+#if KK
+            if (MoveShoeButtons.Value)
+            {
+                Rect lastPos = _buttons.Last().Position;
+                Rect newRect = new Rect(lastPos.position + new Vector2(0, shoeOffset), lastPos.size);
+                if (GUI.Button(newRect, $"Shoes: {(toggleIndoors.isOn ? "Indoors" : "Outdoors")}"))
+                {
+                    if (toggleIndoors.isOn)
+                    {
+                        toggleIndoors.isOn = false;
+                        toggleOutdoors.isOn = true;
+                    }
+                    else
+                    {
+                        toggleIndoors.isOn = true;
+                        toggleOutdoors.isOn = false;
+                    }
+                }
+            }
+#endif
             GUILayout.BeginArea(_accesorySlotsRect);
             {
                 if (showAccessoryMemory.Count > 1)
@@ -201,6 +251,17 @@ namespace ClothingStateMenu
                         showAccessoryMemory.Clear();
                     }
                 }
+
+#if KK || KKS
+                if (showAccessoryMemory.Count > 1 && MoveVanillaButtons.Value)
+                {
+                    if (GUILayout.Button("Main accs - " + (toggleMain.isOn ? "On" : "Off")))
+                        toggleMain.isOn = !toggleMain.isOn;
+                    GUILayout.Space(-5);
+                    if (GUILayout.Button("Sub accs - " + (toggleSub.isOn ? "On" : "Off")))
+                        toggleSub.isOn = !toggleSub.isOn; ;
+                }
+#endif
 
                 _accessorySlotsScrollPos = GUILayout.BeginScrollView(_accessorySlotsScrollPos);
                 {
@@ -237,7 +298,12 @@ namespace ClothingStateMenu
 
         private void DrawAccesoryButton(int accIndex, bool isOn)
         {
-            if (GUILayout.Button($"Slot {accIndex + 1}: {(isOn ? "On" : "Off")}"))
+#if KK || KKS
+            string optString = ShowMainSub.Value ? (_chaCtrl.nowCoordinate.accessory.parts[accIndex].hideCategory == 0 ? "M - " : "S - ") : "";
+#elif EC
+            string optString = "";
+#endif
+            if (GUILayout.Button($"Slot {accIndex + 1}: {optString}{(isOn ? "On" : "Off")}"))
             {
                 _chaCtrl.SetAccessoryState(accIndex, !isOn);
                 showAccessoryMemory[accIndex] = !isOn;
@@ -268,6 +334,8 @@ namespace ClothingStateMenu
             if (MakerAPI.InsideMaker)
                 _buttons.Add(new BodyButton(_chaCtrl, windowRect));
 
+
+
             // Accessories
             _accesorySlotsRect = _buttons.Last().Position;
             _accesorySlotsRect.x += 7;
@@ -293,7 +361,7 @@ namespace ClothingStateMenu
 #if KK || KKS
         private void ToggleAccButtons(bool _state)
         {
-            Transform root = UnityEngine.Object.FindObjectsOfType<GameObject>().Where(x => x.name == "txtClothesState").FirstOrDefault().transform.parent;
+            Transform root = FindObjectsOfType<GameObject>().Where(x => x.name == "txtClothesState").FirstOrDefault().transform.parent;
             for (int i = 0; i < root.childCount; i++)
             {
                 if (root.GetChild(i).gameObject.name == "txtAccessory")
@@ -308,10 +376,27 @@ namespace ClothingStateMenu
 
         private void RegisterToggleEvents()
         {
-            UnityEngine.UI.Toggle toggle1 = UnityEngine.Object.FindObjectsOfType<GameObject>().Where(x => x.name == "imgTglCol01").FirstOrDefault().GetComponent<UnityEngine.UI.Toggle>();
-            UnityEngine.UI.Toggle toggle2 = UnityEngine.Object.FindObjectsOfType<GameObject>().Where(x => x.name == "imgTglCol02").FirstOrDefault().GetComponent<UnityEngine.UI.Toggle>();
-            toggle1.onValueChanged.AddListener((x) => { showAccessoryMemory.Clear(); });
-            toggle2.onValueChanged.AddListener((x) => { showAccessoryMemory.Clear(); });
+            toggleMain = FindObjectsOfType<Transform>().Where(x => x.name == "tglAcsGrp").FirstOrDefault().GetChild(0).GetComponent<Toggle>();
+            toggleSub = FindObjectsOfType<Transform>().Where(x => x.name == "tglAcsGrp").FirstOrDefault().GetChild(1).GetComponent<Toggle>();
+
+            toggleMain.onValueChanged.AddListener((x) => { showAccessoryMemory.Clear(); });
+            toggleSub.onValueChanged.AddListener((x) => { showAccessoryMemory.Clear(); });
+        }
+#endif
+#if KK
+        private void ToggleShoeButtons(bool _state)
+        {
+            Transform root = FindObjectsOfType<GameObject>().Where(x => x.name == "txtClothesState").FirstOrDefault().transform.parent;
+            for (int i = 0; i < root.childCount; i++)
+            {
+                if (root.GetChild(i).gameObject.name == "txtShoes")
+                {
+                    root.GetChild(i + 0).gameObject.SetActive(_state);
+                    root.GetChild(i + 1).gameObject.SetActive(_state);
+                    root.GetChild(i + 2).gameObject.SetActive(_state);
+                    break;
+                }
+            }
         }
 #endif
     }
