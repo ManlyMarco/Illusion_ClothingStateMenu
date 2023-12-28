@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 namespace ClothingStateMenu
 {
-    public readonly struct ToggleButton : IStateToggleButton
+    public class ToggleButton : IStateToggleButton
     {
         private readonly GUIContent _contentOn;
         private readonly GUIContent _contentOff;

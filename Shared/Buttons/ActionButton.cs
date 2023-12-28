@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace ClothingStateMenu
 {
-    public readonly struct ActionButton : IStateToggleButton
+    public class ActionButton : IStateToggleButton
     {
         private readonly Action _action;
 

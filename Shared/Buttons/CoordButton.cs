@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace ClothingStateMenu
 {
-    public readonly struct CoordButton : IStateToggleButton
+    public class CoordButton : IStateToggleButton
     {
         public Rect Position { get; }
         private readonly int _coordId;

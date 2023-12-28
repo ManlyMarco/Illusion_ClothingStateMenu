@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace ClothingStateMenu
 {
-    public readonly struct ClothButton : IStateToggleButton
+    public class ClothButton : IStateToggleButton
     {
         private static readonly Dictionary<ChaFileDefine.ClothesKind, string> _FancyKindNames = new Dictionary<ChaFileDefine.ClothesKind, string>
         {
@@ -50,7 +50,7 @@ namespace ClothingStateMenu
             return _chaCtrl.fileStatus.clothesState[(int)Kind];
         }
 
-        public ClothButton(ChaFileDefine.ClothesKind kind, ChaControl chaCtrl) : this()
+        public ClothButton(ChaFileDefine.ClothesKind kind, ChaControl chaCtrl)
         {
             Kind = kind;
             _chaCtrl = chaCtrl;

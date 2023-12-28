@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace ClothingStateMenu
 {
-    public readonly struct SpaceButton : IStateToggleButton
+    public class SpaceButton : IStateToggleButton
     {
         public GUIContent Content => throw new InvalidOperationException();
 

@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace ClothingStateMenu
 {
-    public struct BodyButton : IStateToggleButton
+    public class BodyButton : IStateToggleButton
     {
         private static readonly GUIContent _ContentVis = new GUIContent("Body: Visible");
         private static readonly GUIContent _ContentHid = new GUIContent("Body: Hidden");

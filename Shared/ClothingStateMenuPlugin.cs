@@ -20,6 +20,7 @@ namespace ClothingStateMenu
         private const float WindowWidth = 125f;
 
         private static readonly Color _BackgroundColor = new Color(0, 0, 0, 0.6f);
+        private static readonly GUILayoutOption[] _NoLayoutOptions = new GUILayoutOption[0];
         private static readonly List<GUIContent[][]> _AccessoryButtonContentCache = new List<GUIContent[][]>();
 
         private readonly List<IStateToggleButton> _buttons = new List<IStateToggleButton>();
@@ -118,6 +119,7 @@ namespace ClothingStateMenu
         {
             get
             {
+                // Calculate only once in Update since this gets called many times a frame in OnGUI
                 return _cachedShowInterface;
             }
             set
@@ -216,7 +218,7 @@ namespace ClothingStateMenu
 
             GUI.backgroundColor = _BackgroundColor;
 
-            _windowRect = GUILayout.Window(90876322, _windowRect, WindowFunc, GUIContent.none, GUI.skin.label);
+            _windowRect = GUILayout.Window(90876322, _windowRect, WindowFunc, GUIContent.none, GUI.skin.label, _NoLayoutOptions);
 
             void WindowFunc(int id)
             {
@@ -230,14 +232,14 @@ namespace ClothingStateMenu
                     }
                     else
                     {
-                        if (GUILayout.Button(clothButton.Content))
+                        if (GUILayout.Button(clothButton.Content, _NoLayoutOptions))
                             clothButton.OnClick();
                         GUILayout.Space(-5);
                     }
                 }
                 GUILayout.Space(7);
 
-                _accessorySlotsScrollPos = GUILayout.BeginScrollView(_accessorySlotsScrollPos);
+                _accessorySlotsScrollPos = GUILayout.BeginScrollView(_accessorySlotsScrollPos, _NoLayoutOptions);
                 {
                     // Not worthwhile to virtualize, far too few items
                     for (var j = 0; j < _showAccessoryMemory.Count; j++)
@@ -268,7 +270,7 @@ namespace ClothingStateMenu
             // Major speedup over creating the content every frame (using string still creates new GUIContent internally)
             while (_AccessoryButtonContentCache.Count <= accIndex)
             {
-                var index = _AccessoryButtonContentCache.Count + 1;
+                var index = (_AccessoryButtonContentCache.Count + 1).ToString();
                 _AccessoryButtonContentCache.Add(new GUIContent[][] // on/off
                 {
                     new GUIContent[] // main/sub
@@ -292,7 +294,7 @@ namespace ClothingStateMenu
             var accTypeIndex = 2;
 #endif
             var acc = _AccessoryButtonContentCache[accIndex][isOn ? 0 : 1][accTypeIndex];
-            if (GUILayout.Button(acc))
+            if (GUILayout.Button(acc, _NoLayoutOptions))
             {
                 _chaCtrl.SetAccessoryState(accIndex, !isOn);
                 _showAccessoryMemory[accIndex] = !isOn;
