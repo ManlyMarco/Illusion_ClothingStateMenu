@@ -5,20 +5,21 @@ namespace ClothingStateMenu
 {
     public struct BodyButton : IStateToggleButton
     {
-        private bool _visible;
+        private static readonly GUIContent _ContentVis = new GUIContent("Body: Visible");
+        private static readonly GUIContent _ContentHid = new GUIContent("Body: Hidden");
 
-        public string Text => $"Body - {(_visible ? "Visible" : "Hidden")}";
-        public Rect Position { get; }
+        private bool _visible;
         private readonly ChaControl _chaCtrl;
 
-        public BodyButton(ChaControl chaCtrl, Rect position)
+        public BodyButton(ChaControl chaCtrl)
         {
             _visible = true;
             _chaCtrl = chaCtrl;
-            Position = position;
         }
 
-        public void NextState()
+        public GUIContent Content => _visible ? _ContentVis : _ContentHid;
+
+        public void OnClick()
         {
             _visible = !_visible;
             SetVisibleState(_chaCtrl, _visible);
