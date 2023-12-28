@@ -237,7 +237,7 @@ namespace ClothingStateMenu
                         GUILayout.Space(-5);
                     }
                 }
-                GUILayout.Space(7);
+                GUILayout.Space(5);
 
                 _accessorySlotsScrollPos = GUILayout.BeginScrollView(_accessorySlotsScrollPos, _NoLayoutOptions);
                 {
@@ -304,6 +304,8 @@ namespace ClothingStateMenu
 
         private void SetupInterface()
         {
+            _buttons.Clear();
+
 #if KK || EC
             var distanceFromRightEdge = Screen.width / 10f;
 #elif KKS
