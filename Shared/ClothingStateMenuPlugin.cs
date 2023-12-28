@@ -73,7 +73,7 @@ namespace ClothingStateMenu
             };
 #endif
 #if KK || KKS
-            ShowMainSub = Config.Bind("Options", "Show Main/Sub acc type in list", false, "Show in the toggle list whether an accessory's category is Main (M) or Sub (S).");
+            ShowMainSub = Config.Bind("Options", "Show Main/Sub acc type in list", true, "Show in the toggle list whether an accessory's category is Main (M) or Sub (S).");
             MoveVanillaButtons = Config.Bind("Options", "Move Vanilla Acc Buttons", false, "Move the vanilla \"Main\" and \"Sub\" accessory toggle buttons from the sidebar to the plugin menu.");
             MoveVanillaButtons.SettingChanged += (sender, args) =>
             {
@@ -217,7 +217,7 @@ namespace ClothingStateMenu
                 _showAccessoryMemory = showAccessory.ToList();
 
 #if KK || KKS
-                if (_coordMemory != _chaCtrl.fileStatus.coordinateType && !RetainStatesBetweenOutfits.Value)
+                if (!RetainStatesBetweenOutfits.Value && _coordMemory != _chaCtrl.fileStatus.coordinateType)
                     _showAccessoryMemory.Clear();
                 _coordMemory = _chaCtrl.fileStatus.coordinateType;
 #endif
@@ -242,7 +242,7 @@ namespace ClothingStateMenu
 
                 foreach (var clothButton in _buttons)
                 {
-                    if (clothButton is SpaceButton)
+                    if (clothButton == null)
                     {
                         GUILayout.Space(7);
                     }
@@ -350,7 +350,7 @@ namespace ClothingStateMenu
                 var toggleOutdoors = shoeToggles[1];
                 if (toggleIndoors != null && toggleOutdoors != null)
                 {
-                    _buttons.Add(new SpaceButton());
+                    _buttons.Add(null);
                     _buttons.Add(new ShoeButton(toggleIndoors, toggleOutdoors));
                 }
                 else
@@ -360,7 +360,7 @@ namespace ClothingStateMenu
             }
 #endif
 
-            _buttons.Add(new SpaceButton());
+            _buttons.Add(null);
             _buttons.Add(new ActionButton("All accs On", () =>
             {
                 _chaCtrl.SetAccessoryStateAll(true);
@@ -375,7 +375,7 @@ namespace ClothingStateMenu
 #if KK || KKS
             if (MakerAPI.InsideMaker && MoveVanillaButtons.Value)
             {
-                _buttons.Add(new SpaceButton());
+                _buttons.Add(null);
 
                 var acs = MakerAPI.GetMakerBase().customCtrl.cmpDrawCtrl.tglShowAccessory;
                 var toggleMain = acs[0];

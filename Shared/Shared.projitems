@@ -18,6 +18,5 @@
     <Compile Include="$(MSBuildThisFileDirectory)Buttons\ToggleButton.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ClothingStateMenuPlugin.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Buttons\IStateToggleButton.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Buttons\SpaceButton.cs" />
   </ItemGroup>
 </Project>
