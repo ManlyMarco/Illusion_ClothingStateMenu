@@ -8,7 +8,6 @@ using KKAPI.Maker;
 using KKAPI.Maker.UI.Sidebar;
 using UniRx;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace ClothingStateMenu
 {
@@ -17,43 +16,39 @@ namespace ClothingStateMenu
         public const string Version = "3.2";
         public const string GUID = "ClothingStateMenu";
 
-        private const float Height = 20f;
         private const float Margin = 5f;
-        private const float Width = 117f;
+        private const float WindowWidth = 125f;
+
+        private static readonly GUILayoutOption[] _NoLayoutOptions = new GUILayoutOption[0];
+        private static readonly List<GUIContent[][]> _AccessoryButtonContentCache = new List<GUIContent[][]>();
 
         private readonly List<IStateToggleButton> _buttons = new List<IStateToggleButton>();
+        private const int CoordCount = 7;
+        private readonly CoordButton[] _coordButtons = new CoordButton[CoordCount];
 
+        private Rect _windowRect;
         private Vector2 _accessorySlotsScrollPos = Vector2.zero;
-        private Rect _accesorySlotsRect;
 
         private ChaControl _chaCtrl;
         private SidebarToggle _sidebarToggle;
-        private List<bool> showAccessoryMemory;
+        private static List<bool> _showAccessoryMemory;
 
         private bool _showOutsideMaker;
-        private ConfigEntry<bool> ShowInMaker { get; set; }
 
+        private ConfigEntry<bool> ShowInMaker { get; set; }
+        private ConfigEntry<Color> BackgroundColor { get; set; }
+        private float _currentBackgroundAlpha;
 #if KK
         private ConfigEntry<bool> MoveShoeButtons { get; set; }
-
-        private Toggle toggleIndoors;
-        private Toggle toggleOutdoors;
-
-        private const int shoeOffset = 25;
 #endif
 #if KK || KKS
         private ConfigEntry<bool> ShowCoordinateButtons { get; set; }
         private ConfigEntry<bool> RetainStatesBetweenOutfits { get; set; }
         private ConfigEntry<bool> MoveVanillaButtons { get; set; }
         private ConfigEntry<bool> ShowMainSub { get; set; }
-        private Action<int> _setCoordAction;
 
-        private int coordMemory = -1;
-
-        private Toggle toggleMain;
-        private Toggle toggleSub;
+        private int _coordMemory = -1;
 #endif
-
         private ConfigEntry<KeyboardShortcut> Keybind { get; set; }
 
         private void Start()
@@ -64,37 +59,33 @@ namespace ClothingStateMenu
                 if (MakerAPI.InsideMaker)
                     ShowInterface = ShowInMaker.Value;
             };
+
+            BackgroundColor = Config.Bind("General", "Background Color", new Color(0, 0, 0, 0.5f), "Tint of the background color of the clothing state menu (subtle change). When mouse cursor hovers over the menu, transparency is forced to 1.");
 #if KK
             MoveShoeButtons = Config.Bind("Options", "Move Shoe Type Buttons", false, "Move the vanilla shoe type buttons from the sidebar to the plugin menu.");
             MoveShoeButtons.SettingChanged += (sender, args) =>
             {
-                _accesorySlotsRect.position += (MoveShoeButtons.Value ? 1 : -1) * new Vector2(0, shoeOffset);
-                ToggleShoeButtons(!MoveShoeButtons.Value);
+                if (MakerAPI.InsideAndLoaded)
+                {
+                    ToggleShoeButtons(!MoveShoeButtons.Value);
+                    SetupInterface();
+                }
             };
 #endif
 #if KK || KKS
-            ShowMainSub = Config.Bind("Options", "Show Main/Sub acc type in list", false, "Show in the toggle list whether an accessory's category is Main (M) or Sub (S).");
+            ShowMainSub = Config.Bind("Options", "Show Main/Sub acc type in list", true, "Show in the toggle list whether an accessory's category is Main (M) or Sub (S).");
             MoveVanillaButtons = Config.Bind("Options", "Move Vanilla Acc Buttons", false, "Move the vanilla \"Main\" and \"Sub\" accessory toggle buttons from the sidebar to the plugin menu.");
-            MoveVanillaButtons.SettingChanged += (sender, args) => ToggleAccButtons(!MoveVanillaButtons.Value);
-            RetainStatesBetweenOutfits = Config.Bind("Options", "Retain Acc States Between Outfits", false, "Acc slots toggled off in one outfit will remain toggled off in others.\nIf disabled, the accs sync up to the vanilla buttons on outfit change.");
-            MakerAPI.MakerFinishedLoading += (sender, args) =>
+            MoveVanillaButtons.SettingChanged += (sender, args) =>
             {
-                RegisterToggleEvents();
-                ToggleAccButtons(!MoveVanillaButtons.Value);
-#if KK
-                if (MoveShoeButtons.Value) _accesorySlotsRect.position += new Vector2(0, shoeOffset);
-                toggleIndoors = FindObjectsOfType<Transform>().Where(x => x.name == "rbShoesType").FirstOrDefault().GetChild(0).GetComponent<Toggle>();
-                toggleOutdoors = FindObjectsOfType<Transform>().Where(x => x.name == "rbShoesType").FirstOrDefault().GetChild(1).GetComponent<Toggle>();
-                ToggleShoeButtons(!MoveShoeButtons.Value);
-#endif
+                if (MakerAPI.InsideAndLoaded)
+                {
+                    ToggleAccButtons(!MoveVanillaButtons.Value);
+                    SetupInterface();
+                }
             };
+            RetainStatesBetweenOutfits = Config.Bind("Options", "Retain Acc States Between Outfits", false, "Acc slots toggled off in one outfit will remain toggled off in others.\nIf disabled, the accs sync up to the vanilla buttons on outfit change.");
 
             ShowCoordinateButtons = Config.Bind("Options", "Show coordinate change buttons in Character Maker", false, "Adds buttons to the menu that allow quickly switching between clothing sets. Same as using the clothing dropdown.\nThe buttons are always shown outside of character maker.");
-            ShowCoordinateButtons.SettingChanged += (sender, args) =>
-            {
-                if (ShowInterface)
-                    ShowInterface = true;
-            };
 #endif
 
             Keybind = Config.Bind("General", "Toggle clothing state menu", new KeyboardShortcut(KeyCode.Tab, KeyCode.LeftShift), "Keyboard shortcut to toggle the clothing state menu on and off.\nCan be used outside of character maker in some cases - works for males in H scenes (the male has to be visible for the menu to appear) and in some conversations with girls.");
@@ -104,37 +95,35 @@ namespace ClothingStateMenu
                 _sidebarToggle = e.AddSidebarControl(new SidebarToggle("Show clothing state menu", ShowInMaker.Value, this));
                 _sidebarToggle.ValueChanged.Subscribe(b => ShowInterface = b);
             };
+            MakerAPI.MakerFinishedLoading += (sender, args) =>
+            {
+#if KK || KKS
+                RegisterToggleEvents();
+                if (MoveVanillaButtons.Value)
+                    ToggleAccButtons(false);
+#endif
+#if KK
+                if (MoveShoeButtons.Value)
+                    ToggleShoeButtons(false);
+#endif
+                if (ShowInMaker.Value)
+                    SetupInterface();
+            };
             MakerAPI.MakerExiting += (sender, e) =>
             {
                 _chaCtrl = null;
-#if KK || KKS
-                _setCoordAction = null;
-#endif
                 _sidebarToggle = null;
+                _showAccessoryMemory.Clear();
             };
         }
 
+        private bool _cachedShowInterface;
         private bool ShowInterface
         {
             get
             {
-                if (MakerAPI.InsideMaker)
-                {
-                    if (!ShowInMaker.Value)
-                        return false;
-                }
-                else
-                {
-                    if (!_showOutsideMaker)
-                        return false;
-                    if (_chaCtrl == null)
-                    {
-                        ShowInterface = false;
-                        return false;
-                    }
-                }
-
-                return CanShow();
+                // Calculate only once in Update since this gets called many times a frame in OnGUI
+                return _cachedShowInterface;
             }
             set
             {
@@ -159,12 +148,30 @@ namespace ClothingStateMenu
                     return;
                 }
 
-                SetupInterface();
+                // Don't try until maker is fully loaded
+                if (!MakerAPI.InsideMaker || MakerAPI.InsideAndLoaded)
+                    SetupInterface();
             }
         }
 
         private bool CanShow()
         {
+            if (MakerAPI.InsideMaker)
+            {
+                if (!ShowInMaker.Value || !MakerAPI.InsideAndLoaded)
+                    return false;
+            }
+            else
+            {
+                if (!_showOutsideMaker)
+                    return false;
+                if (_chaCtrl == null)
+                {
+                    ShowInterface = false;
+                    return false;
+                }
+            }
+
             if (_chaCtrl == null) return false;
             if (!_chaCtrl.visibleAll) return false;
 
@@ -182,25 +189,37 @@ namespace ClothingStateMenu
             if (Keybind.Value.IsDown())
                 ShowInterface = !ShowInterface;
 
+            _cachedShowInterface = CanShow();
+
+            if (_cachedShowInterface)
+            {
+                var mouseHover = _windowRect.Contains(new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y));
+                _currentBackgroundAlpha = Mathf.Lerp(_currentBackgroundAlpha, mouseHover ? 1f : BackgroundColor.Value.a, Time.deltaTime * 10f);
+            }
+            else
+            {
+                _currentBackgroundAlpha = 0;
+            }
+
             if (MakerAPI.InsideMaker && _chaCtrl != null)
             {
                 var showAccessory = _chaCtrl.fileStatus.showAccessory;
-                if (showAccessoryMemory != null && showAccessory.Length == showAccessoryMemory.Count)
+                if (_showAccessoryMemory != null && showAccessory.Length == _showAccessoryMemory.Count)
                 {
-                    for (int i = 0; i < showAccessoryMemory.Count; i++)
+                    for (int i = 0; i < _showAccessoryMemory.Count; i++)
                     {
-                        if (showAccessory[i] != showAccessoryMemory[i] && _chaCtrl.nowCoordinate.accessory.parts[i].type != 120)
+                        if (showAccessory[i] != _showAccessoryMemory[i] && _chaCtrl.nowCoordinate.accessory.parts[i].type != 120)
                         {
-                            _chaCtrl.SetAccessoryState(i, showAccessoryMemory[i]);
+                            _chaCtrl.SetAccessoryState(i, _showAccessoryMemory[i]);
                         }
                     }
                 }
-                showAccessoryMemory = showAccessory.ToList();
+                _showAccessoryMemory = showAccessory.ToList();
 
 #if KK || KKS
-                if (coordMemory != _chaCtrl.fileStatus.coordinateType && !RetainStatesBetweenOutfits.Value)
-                    showAccessoryMemory.Clear();
-                coordMemory = _chaCtrl.fileStatus.coordinateType;
+                if (!RetainStatesBetweenOutfits.Value && _coordMemory != _chaCtrl.fileStatus.coordinateType)
+                    _showAccessoryMemory.Clear();
+                _coordMemory = _chaCtrl.fileStatus.coordinateType;
 #endif
             }
         }
@@ -210,87 +229,52 @@ namespace ClothingStateMenu
             if (!ShowInterface)
                 return;
 
-            foreach (var clothButton in _buttons)
+            var backgroundColor = BackgroundColor.Value;
+            backgroundColor.a = _currentBackgroundAlpha;
+
+            GUI.backgroundColor = backgroundColor;
+
+            _windowRect = GUILayout.Window(90876322, _windowRect, WindowFunc, GUIContent.none, GUI.skin.label, _NoLayoutOptions);
+
+            void WindowFunc(int id)
             {
-                if (GUI.Button(clothButton.Position, clothButton.Text))
-                    clothButton.NextState();
-            }
-#if KK
-            if (MoveShoeButtons.Value)
-            {
-                Rect lastPos = _buttons.Last().Position;
-                Rect newRect = new Rect(lastPos.position + new Vector2(0, shoeOffset), lastPos.size);
-                if (GUI.Button(newRect, $"Shoes: {(toggleIndoors.isOn ? "Indoors" : "Outdoors")}"))
+                GUI.backgroundColor = backgroundColor;
+
+                foreach (var clothButton in _buttons)
                 {
-                    if (toggleIndoors.isOn)
+                    if (clothButton == null)
                     {
-                        toggleIndoors.isOn = false;
-                        toggleOutdoors.isOn = true;
+                        GUILayout.Space(7);
                     }
                     else
                     {
-                        toggleIndoors.isOn = true;
-                        toggleOutdoors.isOn = false;
+                        if (GUILayout.Button(clothButton.Content, _NoLayoutOptions))
+                            clothButton.OnClick();
+                        GUILayout.Space(-5);
                     }
                 }
-            }
-#endif
-            GUILayout.BeginArea(_accesorySlotsRect);
-            {
-                if (showAccessoryMemory.Count > 1)
-                {
-                    if (GUILayout.Button("All accs On"))
-                    {
-                        _chaCtrl.SetAccessoryStateAll(true);
-                        showAccessoryMemory.Clear();
-                    }
-                    GUILayout.Space(-5);
-                    if (GUILayout.Button("All accs Off"))
-                    {
-                        _chaCtrl.SetAccessoryStateAll(false);
-                        showAccessoryMemory.Clear();
-                    }
-                }
+                GUILayout.Space(5);
 
-#if KK || KKS
-                if (showAccessoryMemory.Count > 1 && MoveVanillaButtons.Value)
+                _accessorySlotsScrollPos = GUILayout.BeginScrollView(_accessorySlotsScrollPos, _NoLayoutOptions);
                 {
-                    if (GUILayout.Button("Main accs - " + (toggleMain.isOn ? "On" : "Off")))
-                        toggleMain.isOn = !toggleMain.isOn;
-                    GUILayout.Space(-5);
-                    if (GUILayout.Button("Sub accs - " + (toggleSub.isOn ? "On" : "Off")))
-                        toggleSub.isOn = !toggleSub.isOn; ;
-                }
-#endif
-
-                _accessorySlotsScrollPos = GUILayout.BeginScrollView(_accessorySlotsScrollPos);
-                {
-                    GUILayout.BeginVertical();
+                    // Not worthwhile to virtualize, far too few items
+                    for (var j = 0; j < _showAccessoryMemory.Count; j++)
                     {
-                        for (var j = 0; j < showAccessoryMemory.Count; j++)
-                        {
-                            if (_chaCtrl.nowCoordinate.accessory.parts[j].type != 120)
-                                DrawAccesoryButton(j, showAccessoryMemory[j]);
-                        }
+                        if (_chaCtrl.nowCoordinate.accessory.parts[j].type != 120)
+                            DrawAccesoryButton(j, _showAccessoryMemory[j]);
                     }
-                    GUILayout.EndVertical();
                 }
                 GUILayout.EndScrollView();
             }
-            GUILayout.EndArea();
 
 #if KK || KKS
             if (!MakerAPI.InsideMaker || ShowCoordinateButtons.Value)
             {
-                const float coordWidth = 25f;
-
-                for (var i = 0; i < 7; i++)
+                for (var i = 0; i < CoordCount; i++)
                 {
-                    var position = _buttons[i].Position;
-                    position.x -= coordWidth + Margin;
-                    position.width = coordWidth;
-                    if (GUI.Button(position, (i + 1).ToString()))
-                        _setCoordAction(i);
+                    var btn = _coordButtons[i];
+                    if (GUI.Button(btn.Position, btn.Content))
+                        btn.OnClick();
                 }
             }
 #endif
@@ -298,28 +282,53 @@ namespace ClothingStateMenu
 
         private void DrawAccesoryButton(int accIndex, bool isOn)
         {
+            // Populate the cache with enough entries to cover the current index
+            // Major speedup over creating the content every frame (using string still creates new GUIContent internally)
+            while (_AccessoryButtonContentCache.Count <= accIndex)
+            {
+                var index = (_AccessoryButtonContentCache.Count + 1).ToString();
+                _AccessoryButtonContentCache.Add(new GUIContent[][] // on/off
+                {
+                    new GUIContent[] // main/sub
+                    {
+                        new GUIContent($"M Slot {index}: On"),
+                        new GUIContent($"S Slot {index}: On"),
+                        new GUIContent($"Slot {index}: On"),
+                    },
+                    new GUIContent[]
+                    {
+                        new GUIContent($"M Slot {index}: Off"),
+                        new GUIContent($"S Slot {index}: Off"),
+                        new GUIContent($"Slot {index}: Off"),
+                    }
+                });
+            }
+
 #if KK || KKS
-            string optString = ShowMainSub.Value ? (_chaCtrl.nowCoordinate.accessory.parts[accIndex].hideCategory == 0 ? "M - " : "S - ") : "";
+            var accTypeIndex = ShowMainSub.Value ? (_chaCtrl.nowCoordinate.accessory.parts[accIndex].hideCategory) : 2;
 #elif EC
-            string optString = "";
+            var accTypeIndex = 2;
 #endif
-            if (GUILayout.Button($"Slot {accIndex + 1}: {optString}{(isOn ? "On" : "Off")}"))
+            var acc = _AccessoryButtonContentCache[accIndex][isOn ? 0 : 1][accTypeIndex];
+            if (GUILayout.Button(acc, _NoLayoutOptions))
             {
                 _chaCtrl.SetAccessoryState(accIndex, !isOn);
-                showAccessoryMemory[accIndex] = !isOn;
-            }    
+                _showAccessoryMemory[accIndex] = !isOn;
+            }
             GUILayout.Space(-5);
         }
 
         private void SetupInterface()
         {
+            _buttons.Clear();
+
 #if KK || EC
             var distanceFromRightEdge = Screen.width / 10f;
 #elif KKS
             var distanceFromRightEdge = Screen.width / 8.5f;
 #endif
-            var x = Screen.width - distanceFromRightEdge - Width - Margin;
-            var windowRect = new Rect(x, Margin, Width, Height);
+            var x = Screen.width - distanceFromRightEdge - WindowWidth - Margin;
+            _windowRect = new Rect(x, Margin, WindowWidth, 600);
 
             // Clothing piece state buttons
             foreach (ChaFileDefine.ClothesKind kind in Enum.GetValues(typeof(ChaFileDefine.ClothesKind)))
@@ -327,73 +336,123 @@ namespace ClothingStateMenu
 #if KK || KKS
                 if (kind == ChaFileDefine.ClothesKind.shoes_outer) continue;
 #endif
-                _buttons.Add(new ClothButton(windowRect, kind, _chaCtrl));
-                windowRect.y += Height;
+                _buttons.Add(new ClothButton(kind, _chaCtrl));
             }
             // Invisible body
             if (MakerAPI.InsideMaker)
-                _buttons.Add(new BodyButton(_chaCtrl, windowRect));
+                _buttons.Add(new BodyButton(_chaCtrl));
 
+#if KK
+            if (MakerAPI.InsideMaker && MoveShoeButtons.Value)
+            {
+                var shoeToggles = MakerAPI.GetMakerBase().customCtrl.cmpDrawCtrl.tglShoesType;
+                var toggleIndoors = shoeToggles[0];
+                var toggleOutdoors = shoeToggles[1];
+                if (toggleIndoors != null && toggleOutdoors != null)
+                {
+                    _buttons.Add(null);
+                    _buttons.Add(new ShoeButton(toggleIndoors, toggleOutdoors));
+                }
+                else
+                {
+                    Logger.LogWarning("Couldn't find shoe type toggles");
+                }
+            }
+#endif
 
-
-            // Accessories
-            _accesorySlotsRect = _buttons.Last().Position;
-            _accesorySlotsRect.x += 7;
-            _accesorySlotsRect.width -= 7;
-            _accesorySlotsRect.y += Height + Margin;
-            _accesorySlotsRect.height = 300f;
+            _buttons.Add(null);
+            _buttons.Add(new ActionButton("All accs On", () =>
+            {
+                _chaCtrl.SetAccessoryStateAll(true);
+                _showAccessoryMemory.Clear();
+            }));
+            _buttons.Add(new ActionButton("All accs Off", () =>
+            {
+                _chaCtrl.SetAccessoryStateAll(false);
+                _showAccessoryMemory.Clear();
+            }));
 
 #if KK || KKS
+            if (MakerAPI.InsideMaker && MoveVanillaButtons.Value)
+            {
+                _buttons.Add(null);
+
+                var acs = MakerAPI.GetMakerBase().customCtrl.cmpDrawCtrl.tglShowAccessory;
+                var toggleMain = acs[0];
+                var toggleSub = acs[1];
+                if (toggleMain != null && toggleSub != null)
+                {
+                    _buttons.Add(new ToggleButton(toggleMain, new GUIContent("Main accs: On"), new GUIContent("Main accs: Off")));
+                    _buttons.Add(new ToggleButton(toggleSub, new GUIContent("Sub accs: On"), new GUIContent("Sub accs: Off")));
+                }
+                else
+                {
+                    Logger.LogWarning("Couldn't find toggleMain/toggleSub toggles");
+                }
+            }
+
             // Coordinate change buttons
+            Action<int> setCoordAction;
             var customControl = MakerAPI.GetMakerBase()?.customCtrl;
             if (customControl != null)
             {
                 var coordDropdown = customControl.ddCoordinate;
-                _setCoordAction = newVal => coordDropdown.value = newVal;
+                setCoordAction = newVal => coordDropdown.value = newVal;
             }
             else
             {
-                _setCoordAction = newVal => _chaCtrl.ChangeCoordinateTypeAndReload((ChaFileDefine.CoordinateType)newVal);
+                setCoordAction = newVal => _chaCtrl.ChangeCoordinateTypeAndReload((ChaFileDefine.CoordinateType)newVal);
+            }
+
+            for (var i = 0; i < CoordCount; i++)
+            {
+                const float coordWidth = 25f;
+                const float coordHeight = 20f;
+                var position = new Rect(x: _windowRect.x - coordWidth,
+                                        y: _windowRect.y + 4 + coordHeight * i,
+                                        width: coordWidth,
+                                        height: coordHeight);
+                _coordButtons[i] = new CoordButton(i, setCoordAction, position);
             }
 #endif
         }
 
 #if KK || KKS
-        private void ToggleAccButtons(bool _state)
+        private static void ToggleAccButtons(bool state)
         {
-            Transform root = FindObjectsOfType<GameObject>().Where(x => x.name == "txtClothesState").FirstOrDefault().transform.parent;
+            Transform root = MakerAPI.GetMakerBase().customCtrl.cmpDrawCtrl.tglShowAccessory[0].transform.parent.parent;
             for (int i = 0; i < root.childCount; i++)
             {
                 if (root.GetChild(i).gameObject.name == "txtAccessory")
                 {
-                    root.GetChild(i + 0).gameObject.SetActive(_state);
-                    root.GetChild(i + 1).gameObject.SetActive(_state);
-                    root.GetChild(i + 2).gameObject.SetActive(_state);
+                    root.GetChild(i + 0).gameObject.SetActive(state);
+                    root.GetChild(i + 1).gameObject.SetActive(state);
+                    root.GetChild(i + 2).gameObject.SetActive(state);
                     break;
                 }
             }
         }
 
-        private void RegisterToggleEvents()
+        private static void RegisterToggleEvents()
         {
-            toggleMain = FindObjectsOfType<Transform>().Where(x => x.name == "tglAcsGrp").FirstOrDefault().GetChild(0).GetComponent<Toggle>();
-            toggleSub = FindObjectsOfType<Transform>().Where(x => x.name == "tglAcsGrp").FirstOrDefault().GetChild(1).GetComponent<Toggle>();
-
-            toggleMain.onValueChanged.AddListener((x) => { showAccessoryMemory.Clear(); });
-            toggleSub.onValueChanged.AddListener((x) => { showAccessoryMemory.Clear(); });
+            var acs = MakerAPI.GetMakerBase().customCtrl.cmpDrawCtrl.tglShowAccessory;
+            var toggleMain = acs[0];
+            var toggleSub = acs[1];
+            toggleMain.onValueChanged.AddListener(x => { _showAccessoryMemory.Clear(); });
+            toggleSub.onValueChanged.AddListener(x => { _showAccessoryMemory.Clear(); });
         }
 #endif
 #if KK
-        private void ToggleShoeButtons(bool _state)
+        private static void ToggleShoeButtons(bool state)
         {
-            Transform root = FindObjectsOfType<GameObject>().Where(x => x.name == "txtClothesState").FirstOrDefault().transform.parent;
+            Transform root = MakerAPI.GetMakerBase().customCtrl.cmpDrawCtrl.tglShoesType[0].transform.parent.parent;
             for (int i = 0; i < root.childCount; i++)
             {
                 if (root.GetChild(i).gameObject.name == "txtShoes")
                 {
-                    root.GetChild(i + 0).gameObject.SetActive(_state);
-                    root.GetChild(i + 1).gameObject.SetActive(_state);
-                    root.GetChild(i + 2).gameObject.SetActive(_state);
+                    root.GetChild(i + 0).gameObject.SetActive(state);
+                    root.GetChild(i + 1).gameObject.SetActive(state);
+                    root.GetChild(i + 2).gameObject.SetActive(state);
                     break;
                 }
             }

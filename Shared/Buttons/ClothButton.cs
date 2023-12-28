@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace ClothingStateMenu
 {
-    public readonly struct ClothButton : IStateToggleButton
+    public class ClothButton : IStateToggleButton
     {
-        private static readonly Dictionary<ChaFileDefine.ClothesKind, string> _fancyKindNames = new Dictionary<ChaFileDefine.ClothesKind, string>
+        private static readonly Dictionary<ChaFileDefine.ClothesKind, string> _FancyKindNames = new Dictionary<ChaFileDefine.ClothesKind, string>
         {
             {ChaFileDefine.ClothesKind.top, "Top"},
             {ChaFileDefine.ClothesKind.bot, "Bottom"},
@@ -23,23 +24,23 @@ namespace ClothingStateMenu
 #endif
         };
 
-        private static readonly Dictionary<int, string> _fancyStateNames = new Dictionary<int, string>
+        private static readonly string[] _FancyStateNames =
         {
-            {0, "On"},
-            {1, "Shift"},
-            {2, "Hang"},
-            {3, "Off"}
+            "On",
+            "Shift",
+            "Hang",
+            "Off"
         };
 
-        public string Text => $"{_fancyName} - {_fancyStateNames[GetState()]}";
+        private readonly GUIContent[] _contentStates;
 
-        public Rect Position { get; }
         public readonly ChaFileDefine.ClothesKind Kind;
 
         private readonly ChaControl _chaCtrl;
-        private readonly string _fancyName;
 
-        public void NextState()
+        public GUIContent Content => _contentStates[GetState()];
+
+        public void OnClick()
         {
             _chaCtrl.SetClothesStateNext((int)Kind);
         }
@@ -49,12 +50,13 @@ namespace ClothingStateMenu
             return _chaCtrl.fileStatus.clothesState[(int)Kind];
         }
 
-        public ClothButton(Rect position, ChaFileDefine.ClothesKind kind, ChaControl chaCtrl) : this()
+        public ClothButton(ChaFileDefine.ClothesKind kind, ChaControl chaCtrl)
         {
             Kind = kind;
-            _fancyName = _fancyKindNames[kind];
-            Position = position;
             _chaCtrl = chaCtrl;
+
+            var fancyName = _FancyKindNames[kind];
+            _contentStates = _FancyStateNames.Select(fancyState => new GUIContent($"{fancyName}: {fancyState}")).ToArray();
         }
     }
 }

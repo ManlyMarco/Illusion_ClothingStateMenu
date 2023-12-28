@@ -10,9 +10,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)AssemblyInfo.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)BodyButton.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ClothButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Buttons\ActionButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Buttons\CoordButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)buttons\ShoeButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Buttons\BodyButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Buttons\ClothButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Buttons\ToggleButton.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ClothingStateMenuPlugin.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)IStateToggleButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Buttons\IStateToggleButton.cs" />
   </ItemGroup>
 </Project>
