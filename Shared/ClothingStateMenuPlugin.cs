@@ -19,7 +19,6 @@ namespace ClothingStateMenu
         private const float Margin = 5f;
         private const float WindowWidth = 125f;
 
-        private static readonly Color _BackgroundColor = new Color(0, 0, 0, 0.6f);
         private static readonly GUILayoutOption[] _NoLayoutOptions = new GUILayoutOption[0];
         private static readonly List<GUIContent[][]> _AccessoryButtonContentCache = new List<GUIContent[][]>();
 
@@ -37,6 +36,8 @@ namespace ClothingStateMenu
         private bool _showOutsideMaker;
 
         private ConfigEntry<bool> ShowInMaker { get; set; }
+        private ConfigEntry<Color> BackgroundColor { get; set; }
+        private float _currentBackgroundAlpha;
 #if KK
         private ConfigEntry<bool> MoveShoeButtons { get; set; }
 #endif
@@ -58,6 +59,8 @@ namespace ClothingStateMenu
                 if (MakerAPI.InsideMaker)
                     ShowInterface = ShowInMaker.Value;
             };
+
+            BackgroundColor = Config.Bind("General", "Background Color", new Color(0, 0, 0, 0.5f), "Tint of the background color of the clothing state menu (subtle change). When mouse cursor hovers over the menu, transparency is forced to 1.");
 #if KK
             MoveShoeButtons = Config.Bind("Options", "Move Shoe Type Buttons", false, "Move the vanilla shoe type buttons from the sidebar to the plugin menu.");
             MoveShoeButtons.SettingChanged += (sender, args) =>
@@ -188,6 +191,16 @@ namespace ClothingStateMenu
 
             _cachedShowInterface = CanShow();
 
+            if (_cachedShowInterface)
+            {
+                var mouseHover = _windowRect.Contains(new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y));
+                _currentBackgroundAlpha = Mathf.Lerp(_currentBackgroundAlpha, mouseHover ? 1f : BackgroundColor.Value.a, Time.deltaTime * 10f);
+            }
+            else
+            {
+                _currentBackgroundAlpha = 0;
+            }
+
             if (MakerAPI.InsideMaker && _chaCtrl != null)
             {
                 var showAccessory = _chaCtrl.fileStatus.showAccessory;
@@ -216,13 +229,16 @@ namespace ClothingStateMenu
             if (!ShowInterface)
                 return;
 
-            GUI.backgroundColor = _BackgroundColor;
+            var backgroundColor = BackgroundColor.Value;
+            backgroundColor.a = _currentBackgroundAlpha;
+
+            GUI.backgroundColor = backgroundColor;
 
             _windowRect = GUILayout.Window(90876322, _windowRect, WindowFunc, GUIContent.none, GUI.skin.label, _NoLayoutOptions);
 
             void WindowFunc(int id)
             {
-                GUI.backgroundColor = _BackgroundColor;
+                GUI.backgroundColor = backgroundColor;
 
                 foreach (var clothButton in _buttons)
                 {
