@@ -31,7 +31,6 @@ namespace ClothingStateMenu
 
         private ChaControl _chaCtrl;
         private SidebarToggle _sidebarToggle;
-        private static List<bool> _showAccessoryMemory;
 
         private bool _showOutsideMaker;
 
@@ -53,6 +52,8 @@ namespace ClothingStateMenu
 
         private void Start()
         {
+            HarmonyPatches.Init();
+
             ShowInMaker = Config.Bind("General", "Show in Character Maker", false, "Show the clothing state menu in character maker. Can be enabled from maker interface or by pressing the keyboard shortcut.");
             ShowInMaker.SettingChanged += (sender, args) =>
             {
@@ -113,7 +114,6 @@ namespace ClothingStateMenu
             {
                 _chaCtrl = null;
                 _sidebarToggle = null;
-                _showAccessoryMemory.Clear();
             };
         }
 
@@ -201,27 +201,20 @@ namespace ClothingStateMenu
                 _currentBackgroundAlpha = 0;
             }
 
+#if KK || KKS
             if (MakerAPI.InsideMaker && _chaCtrl != null)
             {
-                var showAccessory = _chaCtrl.fileStatus.showAccessory;
-                if (_showAccessoryMemory != null && showAccessory.Length == _showAccessoryMemory.Count)
-                {
-                    for (int i = 0; i < _showAccessoryMemory.Count; i++)
-                    {
-                        if (showAccessory[i] != _showAccessoryMemory[i] && _chaCtrl.nowCoordinate.accessory.parts[i].type != 120)
-                        {
-                            _chaCtrl.SetAccessoryState(i, _showAccessoryMemory[i]);
-                        }
-                    }
-                }
-                _showAccessoryMemory = showAccessory.ToList();
-
-#if KK || KKS
                 if (!RetainStatesBetweenOutfits.Value && _coordMemory != _chaCtrl.fileStatus.coordinateType)
-                    _showAccessoryMemory.Clear();
+                {
+                    var drawCtrl = MakerAPI.GetMakerBase().customCtrl.cmpDrawCtrl;
+                    var toggleMain = drawCtrl.tglShowAccessory[0];
+                    var toggleSub = drawCtrl.tglShowAccessory[1];
+                    toggleMain.onValueChanged.Invoke(toggleMain.isOn);
+                    toggleSub.onValueChanged.Invoke(toggleSub.isOn);
+                }
                 _coordMemory = _chaCtrl.fileStatus.coordinateType;
-#endif
             }
+#endif
         }
 
         private void OnGUI()
@@ -255,13 +248,15 @@ namespace ClothingStateMenu
                 }
                 GUILayout.Space(5);
 
+                var showAccessory = _chaCtrl.fileStatus.showAccessory;
+
                 _accessorySlotsScrollPos = GUILayout.BeginScrollView(_accessorySlotsScrollPos, _NoLayoutOptions);
                 {
                     // Not worthwhile to virtualize, far too few items
-                    for (var j = 0; j < _showAccessoryMemory.Count; j++)
+                    for (var j = 0; j < showAccessory.Length; j++)
                     {
                         if (_chaCtrl.nowCoordinate.accessory.parts[j].type != 120)
-                            DrawAccesoryButton(j, _showAccessoryMemory[j]);
+                            DrawAccesoryButton(j, showAccessory[j]);
                     }
                 }
                 GUILayout.EndScrollView();
@@ -311,10 +306,7 @@ namespace ClothingStateMenu
 #endif
             var acc = _AccessoryButtonContentCache[accIndex][isOn ? 0 : 1][accTypeIndex];
             if (GUILayout.Button(acc, _NoLayoutOptions))
-            {
                 _chaCtrl.SetAccessoryState(accIndex, !isOn);
-                _showAccessoryMemory[accIndex] = !isOn;
-            }
             GUILayout.Space(-5);
         }
 
@@ -361,16 +353,8 @@ namespace ClothingStateMenu
 #endif
 
             _buttons.Add(null);
-            _buttons.Add(new ActionButton("All accs On", () =>
-            {
-                _chaCtrl.SetAccessoryStateAll(true);
-                _showAccessoryMemory.Clear();
-            }));
-            _buttons.Add(new ActionButton("All accs Off", () =>
-            {
-                _chaCtrl.SetAccessoryStateAll(false);
-                _showAccessoryMemory.Clear();
-            }));
+            _buttons.Add(new ActionButton("All accs On", () => _chaCtrl.SetAccessoryStateAll(true)));
+            _buttons.Add(new ActionButton("All accs Off", () => _chaCtrl.SetAccessoryStateAll(false)));
 
 #if KK || KKS
             if (MakerAPI.InsideMaker && MoveVanillaButtons.Value)
@@ -435,11 +419,11 @@ namespace ClothingStateMenu
 
         private static void RegisterToggleEvents()
         {
-            var acs = MakerAPI.GetMakerBase().customCtrl.cmpDrawCtrl.tglShowAccessory;
-            var toggleMain = acs[0];
-            var toggleSub = acs[1];
-            toggleMain.onValueChanged.AddListener(x => { _showAccessoryMemory.Clear(); });
-            toggleSub.onValueChanged.AddListener(x => { _showAccessoryMemory.Clear(); });
+            var drawCtrl = MakerAPI.GetMakerBase().customCtrl.cmpDrawCtrl;
+            var toggleMain = drawCtrl.tglShowAccessory[0];
+            var toggleSub = drawCtrl.tglShowAccessory[1];
+            toggleMain.onValueChanged.AddListener(x => { drawCtrl.chaCtrl.SetAccessoryStateCategory(0, toggleMain.isOn); });
+            toggleSub.onValueChanged.AddListener(x => { drawCtrl.chaCtrl.SetAccessoryStateCategory(0, toggleMain.isOn); });
         }
 #endif
 #if KK
