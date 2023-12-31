@@ -12,7 +12,7 @@ namespace ClothingStateMenu {
                 Harmony.CreateAndPatchAll(typeof(Hooks), null);
             }
 
-            // Makes OnObjectVisibilityToggled fire for folders
+            // Disables aggressive syncing of the accessory toggle states to the vanilla buttons
             [HarmonyPrefix]
             [HarmonyPatch(typeof(CvsDrawCtrl), "UpdateAccessoryDraw")]
             private static bool CvsDrawDisableUpdateAccessoryDraw() {
