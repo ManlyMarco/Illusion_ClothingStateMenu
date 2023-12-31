@@ -422,8 +422,8 @@ namespace ClothingStateMenu
             var drawCtrl = MakerAPI.GetMakerBase().customCtrl.cmpDrawCtrl;
             var toggleMain = drawCtrl.tglShowAccessory[0];
             var toggleSub = drawCtrl.tglShowAccessory[1];
-            toggleMain.onValueChanged.AddListener(x => { drawCtrl.chaCtrl.SetAccessoryStateCategory(0, toggleMain.isOn); });
-            toggleSub.onValueChanged.AddListener(x => { drawCtrl.chaCtrl.SetAccessoryStateCategory(0, toggleMain.isOn); });
+            toggleMain.onValueChanged.AddListener(x => drawCtrl.chaCtrl.SetAccessoryStateCategory(0, toggleMain.isOn));
+            toggleSub.onValueChanged.AddListener(x => drawCtrl.chaCtrl.SetAccessoryStateCategory(0, toggleMain.isOn));
         }
 #endif
 #if KK
