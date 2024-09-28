@@ -52,7 +52,7 @@ namespace ClothingStateMenu
 
         private void Start()
         {
-            HarmonyPatches.Init();
+            Hooks.Init();
 
             ShowInMaker = Config.Bind("General", "Show in Character Maker", false, "Show the clothing state menu in character maker. Can be enabled from maker interface or by pressing the keyboard shortcut.");
             ShowInMaker.SettingChanged += (sender, args) =>
