@@ -6,6 +6,7 @@ using BepInEx.Configuration;
 using KKAPI;
 using KKAPI.Maker;
 using KKAPI.Maker.UI.Sidebar;
+using KKAPI.Utilities;
 using UniRx;
 using UnityEngine;
 
@@ -227,7 +228,9 @@ namespace ClothingStateMenu
 
             GUI.backgroundColor = backgroundColor;
 
-            _windowRect = GUILayout.Window(90876322, _windowRect, WindowFunc, GUIContent.none, GUI.skin.label, _NoLayoutOptions);
+            // To allow mouse draging the skin has to have solid background, box works fine. No dragging in maker.
+            var style = MakerAPI.InsideMaker || _currentBackgroundAlpha == 0 ? GUI.skin.label : GUI.skin.box;
+            _windowRect = GUILayout.Window(90876322, _windowRect, WindowFunc, GUIContent.none, style, _NoLayoutOptions);
 
             void WindowFunc(int id)
             {
@@ -260,6 +263,15 @@ namespace ClothingStateMenu
                     }
                 }
                 GUILayout.EndScrollView();
+
+                // Keep pinned in maker, but allow dragging outside.
+                if (!MakerAPI.InsideMaker)
+                {
+                    var w = _windowRect.width;
+                    _windowRect = IMGUIUtils.DragResizeEatWindow(id, _windowRect);
+                    // Only resize width
+                    _windowRect.width = w;
+                }
             }
 
 #if KK || KKS
@@ -268,7 +280,7 @@ namespace ClothingStateMenu
                 for (var i = 0; i < CoordCount; i++)
                 {
                     var btn = _coordButtons[i];
-                    if (GUI.Button(btn.Position, btn.Content))
+                    if (GUI.Button(new Rect(btn.Position.x + _windowRect.x, btn.Position.y + _windowRect.y, btn.Position.width, btn.Position.height), btn.Content))
                         btn.OnClick();
                 }
             }
@@ -320,7 +332,18 @@ namespace ClothingStateMenu
             var distanceFromRightEdge = Screen.width / 8.5f;
 #endif
             var x = Screen.width - distanceFromRightEdge - WindowWidth - Margin;
-            _windowRect = new Rect(x, Margin, WindowWidth, 600);
+            if (MakerAPI.InsideMaker)
+            {
+                _windowRect = new Rect(x, Margin, WindowWidth, 600);
+            }
+            else
+            {
+                // Let the window auto-size and keep the position while outside maker
+                _windowRect = new Rect(x: _windowRect.x != 0 ? _windowRect.x : x,
+                                       y: _windowRect.y != 0 ? _windowRect.y : Margin,
+                                       width: WindowWidth,
+                                       height: 200);
+            }
 
             // Clothing piece state buttons
             foreach (ChaFileDefine.ClothesKind kind in Enum.GetValues(typeof(ChaFileDefine.ClothesKind)))
@@ -392,8 +415,8 @@ namespace ClothingStateMenu
             {
                 const float coordWidth = 25f;
                 const float coordHeight = 20f;
-                var position = new Rect(x: _windowRect.x - coordWidth,
-                                        y: _windowRect.y + 4 + coordHeight * i,
+                var position = new Rect(x: -coordWidth,
+                                        y: 4 + coordHeight * i,
                                         width: coordWidth,
                                         height: coordHeight);
                 _coordButtons[i] = new CoordButton(i, setCoordAction, position);
