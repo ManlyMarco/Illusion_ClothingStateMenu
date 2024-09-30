@@ -16,13 +16,7 @@ namespace ClothingStateMenu
             {ChaFileDefine.ClothesKind.gloves, "Gloves"},
             {ChaFileDefine.ClothesKind.panst, "Pantyhose"},
             {ChaFileDefine.ClothesKind.socks, "Legwear"},
-#if KK || KKS
-            
-            {ChaFileDefine.ClothesKind.shoes_inner, "Shoes"},
-            {ChaFileDefine.ClothesKind.shoes_outer, "Shoes"}
-#elif EC
             {ChaFileDefine.ClothesKind.shoes, "Shoes"},
-#endif
         };
 
         private static readonly string[] _FancyStateNames =
@@ -44,6 +38,7 @@ namespace ClothingStateMenu
         public void OnClick()
         {
             _chaCtrl.cloth.SetClothesStateNext(Kind);
+            _chaCtrl.cloth.UpdateClothesStateAll();
         }
 
         public int GetState()

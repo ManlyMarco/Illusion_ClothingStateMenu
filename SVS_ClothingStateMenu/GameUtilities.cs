@@ -1,10 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Character;
-using ClothingStateMenu.Utils;
 using SaveData;
 
-namespace ClothingStateMenu;
+namespace IllusionMods;
 
 /// <summary>
 /// TODO move to a separate API dll
@@ -39,21 +39,60 @@ internal static class GameUtilities
     /// </summary>
     public static string GetCharaName(this Actor chara, bool translated)
     {
-        var fullname = chara?.charFile?.Parameter?.fullname;
+        var fullname = chara?.charFile?.Parameter.GetCharaName(translated);
         if (!string.IsNullOrEmpty(fullname))
         {
-            if (translated) throw new System.NotImplementedException();
+            if (translated)
+            {
+                TranslationHelper.TryTranslate(fullname, out var translatedName);
+                if (!string.IsNullOrEmpty(translatedName))
+                    return translatedName;
+            }
             return fullname;
         }
         return chara?.chaCtrl?.name ?? chara?.ToString();
     }
 
     /// <summary>
-    /// Get ID of this character in the main character list (in save data). Returns -1 if the character is not on the main game map and is not saved to the save data.
+    /// Get a display name of the character. Only use in interface, not for keeping track of the character.
+    /// If <paramref name="translated"/> is true and AutoTranslator is active, try to get a translated version of the name in current language. Otherwise, return the original name.
     /// </summary>
-    public static int GetMainActorId(this Actor currentAdvChara)
+    public static string GetCharaName(this HumanDataParameter param, bool translated)
     {
-        var mainActorInstance = currentAdvChara.GetMainActorInstance();
+        var fullname = param?.fullname;
+        if (!string.IsNullOrEmpty(fullname))
+        {
+            if (translated)
+            {
+                TranslationHelper.TryTranslate(fullname, out var translatedName);
+                if (!string.IsNullOrEmpty(translatedName))
+                    return translatedName;
+            }
+            return fullname;
+        }
+        return "";
+    }
+
+
+    /// <summary>
+    /// Get ID of this character in the main character list (in save data). Returns -1 if the character is a copy, or if it is not saved to the save data.
+    /// </summary>
+    public static int TryGetActorId(this Actor currentAdvChara)
+    {
+        if (currentAdvChara == null) throw new ArgumentNullException(nameof(currentAdvChara));
+
+        var found = Manager.Game.Charas.AsManagedEnumerable().FirstOrDefault(x => currentAdvChara.Equals(x.Value));
+        return found.Value != null ? found.Key : -1;
+    }
+
+    /// <summary>
+    /// Get ID of this character (or ID of the original instance of this character copy) in the main character list (in save data). Returns -1 if the character is not on the main game map and is not saved to the save data.
+    /// </summary>
+    public static int FindMainActorId(this Actor currentAdvChara)
+    {
+        if (currentAdvChara == null) throw new ArgumentNullException(nameof(currentAdvChara));
+
+        var mainActorInstance = currentAdvChara.FindMainActorInstance();
         return mainActorInstance.Value != null ? mainActorInstance.Key : -1;
     }
 
@@ -62,15 +101,19 @@ internal static class GameUtilities
     /// If <paramref name="mainInstances"/> is true, the original overworld characters are returned (which are saved to the save file; if not found the character is not included in the result).
     /// If <paramref name="mainInstances"/> is false, the actors in the current scene are returned (which are copies of the original characters in H and ADV scenes; in maker nothing is returned since there is no actor).
     /// </summary>
-    public static IEnumerable<Character.Human> GetVisibleHumans(bool mainInstances)
+    public static IEnumerable<Character.Human> GetCurrentHumans(bool mainInstances)
     {
         if (InsideMaker)
         {
             var maker = CharacterCreation.HumanCustom.Instance;
-            return new[] { mainInstances ? maker.HumanData.About.GetMainActorInstance().Value?.chaCtrl : maker.Human };
+            if (!mainInstances)
+                return new[] { maker.Human };
+
+            var result = maker.HumanData.About.FindMainActorInstance().Value?.chaCtrl;
+            return result != null ? new[] { result } : Enumerable.Empty<Character.Human>();
         }
 
-        return GetVisibleActors(mainInstances).Select(x => x.Value.chaCtrl);
+        return GetCurrentActors(mainInstances).Select(x => x.Value.chaCtrl).Where(x => x != null);
     }
 
     /// <summary>
@@ -78,13 +121,13 @@ internal static class GameUtilities
     /// If <paramref name="mainInstances"/> is true, the original overworld characters are returned with their save data IDs (the characters that are saved to the save file; if not found the character is not included in the result).
     /// If <paramref name="mainInstances"/> is false, the actors in the current scene are returned with their relative IDs (which are copies of the original characters in H and ADV scenes; in maker nothing is returned since there is no actor).
     /// </summary>
-    public static IEnumerable<KeyValuePair<int, Actor>> GetVisibleActors(bool mainInstances)
+    public static IEnumerable<KeyValuePair<int, Actor>> GetCurrentActors(bool mainInstances)
     {
         if (InsideMaker)
         {
             if (mainInstances)
             {
-                var actor = CharacterCreation.HumanCustom.Instance.HumanData.About.GetMainActorInstance();
+                var actor = CharacterCreation.HumanCustom.Instance.HumanData.About.FindMainActorInstance();
                 if (actor.Value != null)
                     return new[] { actor };
             }
@@ -96,7 +139,7 @@ internal static class GameUtilities
         {
             // HScene.Actors contains copies of the actors
             if (mainInstances)
-                return SV.H.HScene._instance.Actors.Select(GetMainActorInstance).Where(x => x.Value != null);
+                return SV.H.HScene._instance.Actors.Select(FindMainActorInstance).Where(x => x.Value != null);
             else
                 return SV.H.HScene._instance.Actors.Select((ha, i) => new KeyValuePair<int, Actor>(i, ha.Actor)).Where(x => x.Value != null);
         }
@@ -107,14 +150,14 @@ internal static class GameUtilities
             var npcs = new List<KeyValuePair<int, Actor>>
             {
                 // PlayerHi and Npc1-4 contain copies of the Actors
-                new(0,talkManager.PlayerHi),
-                new(1,talkManager.Npc1),
-                new(2,talkManager.Npc2),
-                new(3,talkManager.Npc3),
-                new(4,talkManager.Npc4),
+                new(0,talkManager.Npc1),
+                new(1,talkManager.Npc2),
+                new(2,talkManager.Npc3),
+                new(3,talkManager.Npc4),
+                new(4,talkManager.PlayerHi),
             }.AsEnumerable();
             if (mainInstances)
-                npcs = npcs.Select(pair => pair.Value.GetMainActorInstance());
+                npcs = npcs.Select(pair => pair.Value.FindMainActorInstance());
             return npcs.Where(x => x.Value != null);
         }
 
@@ -132,17 +175,16 @@ internal static class GameUtilities
     /// <summary>
     /// Get the main character instance of the actor (the one that is visible on the main map and saved to the save file).
     /// </summary>
-    public static KeyValuePair<int, Actor> GetMainActorInstance(this SV.H.HActor x) => x?.Actor.GetMainActorInstance() ?? default;
+    public static KeyValuePair<int, Actor> FindMainActorInstance(this SV.H.HActor x) => x?.Actor.FindMainActorInstance() ?? default;
 
     /// <summary>
     /// Get the main character instance of the actor (the one that is visible on the main map and saved to the save file).
     /// </summary>
-    public static KeyValuePair<int, Actor> GetMainActorInstance(this Actor x) => x?.charFile.About.GetMainActorInstance() ?? default;
+    public static KeyValuePair<int, Actor> FindMainActorInstance(this Actor x) => x?.charFile.About.FindMainActorInstance() ?? default;
 
     /// <summary>
     /// Get the main character instance of the actor (the one that is visible on the main map and saved to the save file).
     /// TODO: Find a better way to get the originals
     /// </summary>
-    public static KeyValuePair<int, Actor> GetMainActorInstance(this HumanDataAbout x) => x == null ? default : Manager.Game.Charas.AsManagedEnumerable().FirstOrDefault(y => x.dataID == y.Value.charFile.About.dataID);
-
+    public static KeyValuePair<int, Actor> FindMainActorInstance(this HumanDataAbout x) => x == null ? default : Manager.Game.Charas.AsManagedEnumerable().FirstOrDefault(y => x.dataID == y.Value.charFile.About.dataID);
 }

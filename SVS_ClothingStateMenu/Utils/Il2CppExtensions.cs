@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace ClothingStateMenu.Utils
+namespace IllusionMods
 {
     internal static class Il2CppExtensions
     {
