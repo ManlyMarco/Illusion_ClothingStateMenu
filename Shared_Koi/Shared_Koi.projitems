@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>c6041971-6d9f-4fc8-ac97-2a2a4459e8e8</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>Shared_Koi</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Buttons\ActionButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Buttons\BodyButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Buttons\ClothButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Buttons\CoordButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Buttons\IStateToggleButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Buttons\ShoeButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Buttons\ToggleButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ClothingStateMenuPlugin.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)HarmonyPatches.cs" />
+  </ItemGroup>
+</Project>

@@ -14,8 +14,8 @@ namespace ClothingStateMenu
 {
     public partial class ClothingStateMenuPlugin : BaseUnityPlugin
     {
-        public const string Version = "4.0.1";
-        public const string GUID = "ClothingStateMenu";
+        public const string Version = Constants.Version;
+        public const string GUID = Constants.GUID;
 
         private const float Margin = 5f;
         private const float WindowWidth = 125f;

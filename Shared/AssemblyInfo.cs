@@ -5,4 +5,4 @@
 [assembly: AssemblyCopyright("Copyright ©  2020")]
 [assembly: AssemblyCompany("https://github.com/ManlyMarco/Illusion_ClothingStateMenu")]
 
-[assembly: AssemblyVersion(ClothingStateMenu.ClothingStateMenuPlugin.Version)]
+[assembly: AssemblyVersion(ClothingStateMenu.Constants.Version)]
