@@ -34,13 +34,17 @@ namespace ClothingStateMenu
             if (chaControl == null)
                 throw new ArgumentNullException(nameof(chaControl));
 
-            Transform cf_j_root = chaControl.body.objBone.transform.Find("cf_j_root");
-            if (cf_j_root != null)
-                IterateVisible(cf_j_root.gameObject, visible);
+            var boneRoot = chaControl.body.objBone.transform.Find("cf_j_root");
+            if (boneRoot != null)
+                IterateVisible(boneRoot.gameObject, visible);
 
-            Transform cf_o_rootf = chaControl.body.objBody.transform.Find("cf_01/cf_o_root/");
-            if (cf_o_rootf != null)
-                IterateVisible(cf_o_rootf.gameObject, visible);
+            var bodyRoot = chaControl.body.objBody.transform;
+            if (bodyRoot != null)
+                IterateVisible(bodyRoot.gameObject, visible);
+
+            var nailRoot = chaControl.body.hand.nailObject.obj?.transform;
+            if (nailRoot != null)
+                IterateVisible(nailRoot.gameObject, visible);
         }
 
         /// <summary>

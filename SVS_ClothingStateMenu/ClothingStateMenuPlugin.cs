@@ -1,8 +1,4 @@
-﻿#define KK
-#define KKS
-#define EC
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using BepInEx;
@@ -10,26 +6,52 @@ using BepInEx.Configuration;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using Character;
+using CharacterCreation;
 using ClothingStateMenu.Utils;
 using IllusionMods;
-using MonoMod.RuntimeDetour;
 using UnityEngine;
+using UnityEngine.UI;
+using Object = UnityEngine.Object;
 
-
-// todo it needs a rewrite to use in svs and hc
+// TODO: needs refactoring to use in svs and hc
+// TODO: merge more code with koi version?
 namespace ClothingStateMenu
 {
     [BepInPlugin(GUID, "Clothing State Menu", Version)]
     [BepInProcess(GameUtilities.GameProcessName)]
     public class ClothingStateMenuPlugin : BasePlugin
     {
-        public const string Version = "4.0.1";
-        public const string GUID = "ClothingStateMenu";
+        public const string Version = Constants.Version;
+        public const string GUID = Constants.GUID;
 
-        internal static ConfigEntry<KeyboardShortcut> Keybind { get; set; }
         internal static ManualLogSource Logger { get; private set; }
-
         private static ClothingStateMenuPlugin Instance { get; set; }
+
+        private const float Margin = 5f;
+        private const float WindowWidth = 125f;
+
+        private static readonly GUILayoutOption[] _NoLayoutOptions = Array.Empty<GUILayoutOption>();
+        private static readonly List<GUIContent[][]> _AccessoryButtonContentCache = new();
+
+        private readonly List<IStateToggleButton> _buttons = new();
+        private const int CoordCount = 3; //todo make this not hardcoded
+        private readonly CoordButton[] _coordButtons = new CoordButton[CoordCount];
+
+        private Rect _windowRect;
+        private Vector2 _accessorySlotsScrollPos = Vector2.zero;
+
+        private Human[] _visibleCharas = Array.Empty<Human>();
+        private Human _selectedChara;
+        private readonly ImguiComboBox _charaDropdown = new();
+        private GUIContent[] _visibleCharasContents = Array.Empty<GUIContent>();
+        private GUIContent _selectedCharaContent;
+
+        private ConfigEntry<Color> BackgroundColor { get; set; }
+        private float _currentBackgroundAlpha;
+
+        private ConfigEntry<bool> ShowCoordinateButtons { get; set; }
+        private ConfigEntry<bool> ShowMainSub { get; set; }
+        private ConfigEntry<KeyboardShortcut> Keybind { get; set; }
 
         public override void Load()
         {
@@ -51,103 +73,34 @@ namespace ClothingStateMenu
 
             BackgroundColor = Config.Bind("General", "Background Color", new Color(0, 0, 0, 0.5f), "Tint of the background color of the clothing state menu (subtle change). When mouse cursor hovers over the menu, transparency is forced to 1.");
 
-            RetainStatesBetweenOutfits = Config.Bind("Options", "Retain Acc States Between Outfits", false, "Acc slots toggled off in one outfit will remain toggled off in others.\nIf disabled, the accs sync up to the vanilla buttons on outfit change.");
-
             Keybind = Config.Bind("General", "Toggle clothing state menu", new KeyboardShortcut(KeyCode.Tab, KeyCode.LeftShift), "Keyboard shortcut to toggle the clothing state menu on and off.\nCan be used outside of character maker in some cases - works for males in H scenes (the male has to be visible for the menu to appear) and in some conversations with girls.");
+            ShowCoordinateButtons = Config.Bind("Options", "Show coordinate change buttons in Character Maker", false, "Adds buttons to the menu that allow quickly switching between clothing sets. Same as using the clothing dropdown.\nThe buttons are always shown outside of character maker.");
+            ShowMainSub = Config.Bind("Options", "Show S/H in accessory list", true, "Show in the toggle list whether an accessory is set to Show (S) or Hide (H) in H scenes.");
 
             AddComponent<ClothingStateMenuComponent>();
         }
 
         private sealed class ClothingStateMenuComponent : MonoBehaviour
         {
-            private void Update()
-            {
-                Instance.Update();
-            }
-
-            private void OnGUI()
-            {
-                Instance.OnGUI();
-            }
-            /*
-               CharacterCreation.HumanCustom.Instance.Human.cloth.fileStatus.clothesState
-               if (InsideMaker)
-                   return CharacterCreation.HumanCustom.Instance.SetClothesVisible(ChaFileDefine.ClothesKind.top, ) then updatestate
-    */
+            private void Update() => Instance.Update();
+            private void OnGUI() => Instance.OnGUI();
         }
-
-        private const float Margin = 5f;
-        private const float WindowWidth = 125f;
-
-        private static readonly GUILayoutOption[] _NoLayoutOptions = Array.Empty<GUILayoutOption>();
-        private static readonly List<GUIContent[][]> _AccessoryButtonContentCache = new();
-
-        private readonly List<IStateToggleButton> _buttons = new();
-        private const int CoordCount = 3; //todo not hardcoded
-        private readonly CoordButton[] _coordButtons = new CoordButton[CoordCount];
-
-        private Rect _windowRect;
-        private Vector2 _accessorySlotsScrollPos = Vector2.zero;
-
-        private Human[] _visibleCharas = Array.Empty<Human>();
-        private Human _selectedChara;
-        private ImguiComboBox _charaDropdown = new();
-        private GUIContent[] _visibleCharasContents = Array.Empty<GUIContent>();
-        private GUIContent _selectedCharaContent;
-
-        private ConfigEntry<Color> BackgroundColor { get; set; }
-        private float _currentBackgroundAlpha;
-        private ConfigEntry<bool> RetainStatesBetweenOutfits { get; set; }
-
-        private int _coordMemory = -1;
 
         private bool _showInterface;
         private bool ShowInterface
         {
-            get
-            {
-                // Calculate only once in Update since this gets called many times a frame in OnGUI
-                return _showInterface;
-            }
+            get => _showInterface;
             set
             {
-                // todo open if any chara is there, have a combobox with all acceptable charas
-
-                if (!value)
+                if (value)
+                {
+                    RefreshCharacterList();
+                    _showInterface = _selectedChara != null;
+                }
+                else
                 {
                     _showInterface = false;
-                    return;
                 }
-
-                RefreshCharacterList();
-
-                _showInterface = _selectedChara != null;
-
-
-                // if (MakerAPI.InsideMaker)
-                // {
-                //     ShowInMaker.Value = value;
-                //     if (_sidebarToggle != null) _sidebarToggle.Value = value;
-                // }
-                // else
-                //     _showOutsideMaker = value;
-                //
-                // _chaCtrl = null;
-                // _buttons.Clear();
-                //
-                // if (!value) return;
-                //
-                // FindTargetCharacter();
-                //
-                // if (_chaCtrl == null)
-                // {
-                //     _showOutsideMaker = false;
-                //     return;
-                // }
-                //
-                // // Don't try until maker is fully loaded
-                // if (!MakerAPI.InsideMaker || MakerAPI.InsideAndLoaded)
-                //     SetupInterface();
             }
         }
 
@@ -158,7 +111,7 @@ namespace ClothingStateMenu
                 _selectedChara = _visibleCharas.FirstOrDefault();
 
             _visibleCharasContents = _visibleCharas.Select(x => new GUIContent(x.fileParam.GetCharaName(true))).ToArray();
-            
+
             var anyChara = _selectedChara != null;
             if (anyChara)
             {
@@ -179,14 +132,11 @@ namespace ClothingStateMenu
             if (Keybind.Value.IsDown())
                 ShowInterface = !ShowInterface;
 
-            //todo check for charas here? only if chara was destroyed and then trigger chara list refresh?
-            //_showInterface = CanShow();
-
             if (_showInterface)
             {
                 if (!_selectedChara?.transform)
                 {
-                    if(!RefreshCharacterList())
+                    if (!RefreshCharacterList())
                         return;
                 }
 
@@ -197,20 +147,6 @@ namespace ClothingStateMenu
             {
                 _currentBackgroundAlpha = 0;
             }
-
-            // todo necessary?
-            //if (GameUtilities.InsideMaker && _chaCtrl != null)
-            //{
-            //    if (!RetainStatesBetweenOutfits.Value && _coordMemory != _chaCtrl.fileStatus.coordinateType)
-            //    {
-            //        var drawCtrl = CharacterCreation.HumanCustom.Instance.customCtrl.cmpDrawCtrl;
-            //        var toggleMain = drawCtrl.tglShowAccessory[0];
-            //        var toggleSub = drawCtrl.tglShowAccessory[1];
-            //        toggleMain.onValueChanged.Invoke(toggleMain.isOn);
-            //        toggleSub.onValueChanged.Invoke(toggleSub.isOn);
-            //    }
-            //    _coordMemory = _chaCtrl.fileStatus.coordinateType;
-            //}
         }
 
         private void OnGUI()
@@ -230,6 +166,9 @@ namespace ClothingStateMenu
             void WindowFunc(int id)
             {
                 GUI.backgroundColor = backgroundColor;
+
+                // Space for mouse dragging
+                GUILayout.Space(6);
 
                 _charaDropdown.Show(_selectedCharaContent, () => _visibleCharasContents, i =>
                 {
@@ -273,8 +212,7 @@ namespace ClothingStateMenu
                 _charaDropdown.DrawDropdownIfOpen();
             }
 
-            //if (!MakerAPI.InsideMaker || ShowCoordinateButtons.Value)
-            if (!GameUtilities.InsideMaker)
+            if (!GameUtilities.InsideMaker || ShowCoordinateButtons.Value)
             {
                 for (var i = 0; i < CoordCount; i++)
                 {
@@ -292,7 +230,7 @@ namespace ClothingStateMenu
             while (_AccessoryButtonContentCache.Count <= accIndex)
             {
                 var index = (_AccessoryButtonContentCache.Count + 1).ToString();
-                _AccessoryButtonContentCache.Add(new GUIContent[][] // on/off
+                _AccessoryButtonContentCache.Add(new[] // on/off
                 {
                     new GUIContent[] // show/hide in h scene
                     {
@@ -309,22 +247,17 @@ namespace ClothingStateMenu
                 });
             }
 
-            //var accTypeIndex = ShowMainSub.Value ? (_chaCtrl.cloth.nowCoordinate.Accessory.parts[accIndex].hideCategory) : 2;
-            var accTypeIndex = _selectedChara.cloth.nowCoordinate.Accessory.parts[accIndex].hideCategory;
+            var accTypeIndex = ShowMainSub.Value ? _selectedChara.cloth.nowCoordinate.Accessory.parts[accIndex].hideCategory : 2;
 
             var acc = _AccessoryButtonContentCache[accIndex][isOn ? 0 : 1][accTypeIndex];
             if (GUILayout.Button(acc, _NoLayoutOptions))
-            {
                 _selectedChara.acs.SetAccessoryState(accIndex, !isOn);
-                //todo needed? _chaCtrl.acs.UpdateVisible();
-            }
 
             GUILayout.Space(-5);
         }
 
-        private bool _lastCatShown = true;
-        private bool _lastCatHidden = true;
-
+        private bool _lastValueAccShow = true;
+        private bool _lastValueAccHide = true;
         private void SetupInterface()
         {
             const float coordWidth = 25f;
@@ -352,30 +285,30 @@ namespace ClothingStateMenu
             _buttons.Add(new ActionButton("All accs Off", () => _selectedChara.acs.SetAccessoryStateAll(false)));
 
             _buttons.Add(null);
-
-            //_chaCtrl.cloth.nowCoordinate.Accessory.parts.FirstOrDefault(x=>x.type != 120 && x.hideCategory == 0 && x.)));
-            _buttons.Add(new ActionButton("Shown in H", () => _selectedChara.acs.SetAccessoryStateCategory(0, _lastCatShown = !_lastCatShown)));
-            _buttons.Add(new ActionButton("Hidden in H", () => _selectedChara.acs.SetAccessoryStateCategory(1, _lastCatHidden = !_lastCatHidden)));
+            _buttons.Add(new ActionButton("Shown in H", () => _selectedChara.acs.SetAccessoryStateCategory(0, _lastValueAccShow = !_lastValueAccShow)));
+            _buttons.Add(new ActionButton("Hidden in H", () => _selectedChara.acs.SetAccessoryStateCategory(1, _lastValueAccHide = !_lastValueAccHide)));
 
             // Coordinate change buttons
-            Action<int> setCoordAction;
-            //todo
-            //var customControl = MakerAPI.GetMakerBase()?.customCtrl;
-            //if (customControl != null)
-            //{
-            //    var coordDropdown = customControl.ddCoordinate;
-            //    setCoordAction = newVal => coordDropdown.value = newVal;
-            //}
-            //else
-            //{
-            //    setCoordAction = newVal => _chaCtrl.ChangeCoordinateTypeAndReload((ChaFileDefine.CoordinateType)newVal);
-            //}
-            setCoordAction = newVal =>
+            Action<int> setCoordAction = newVal =>
             {
+                if (GameUtilities.InsideMaker)
+                {
+                    try
+                    {
+                        var ctc = Object.FindObjectOfType<CoordinateTypeChange>();
+                        var c = ctc._coordeTypesRoot.GetChild(newVal);
+                        c.GetComponent<Toggle>().isOn = true;
+                        return;
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError(e);
+                    }
+                }
+
                 _selectedChara.coorde.SetNowCoordinate(_selectedChara.data.Coordinates[newVal]);
                 _selectedChara.ReloadCoordinate();
             };
-
             for (var i = 0; i < CoordCount; i++)
             {
                 var position = new Rect(x: -coordWidth,
@@ -385,47 +318,5 @@ namespace ClothingStateMenu
                 _coordButtons[i] = new CoordButton(i, setCoordAction, position);
             }
         }
-
-        /*#if KK || KKS
-                private static void ToggleAccButtons(bool state)
-                {
-                    Transform root = MakerAPI.GetMakerBase().customCtrl.cmpDrawCtrl.tglShowAccessory[0].transform.parent.parent;
-                    for (int i = 0; i < root.childCount; i++)
-                    {
-                        if (root.GetChild(i).gameObject.name == "txtAccessory")
-                        {
-                            root.GetChild(i + 0).gameObject.SetActive(state);
-                            root.GetChild(i + 1).gameObject.SetActive(state);
-                            root.GetChild(i + 2).gameObject.SetActive(state);
-                            break;
-                        }
-                    }
-                }
-
-                private static void RegisterToggleEvents()
-                {
-                    var drawCtrl = MakerAPI.GetMakerBase().customCtrl.cmpDrawCtrl;
-                    var toggleMain = drawCtrl.tglShowAccessory[0];
-                    var toggleSub = drawCtrl.tglShowAccessory[1];
-                    toggleMain.onValueChanged.AddListener(x => drawCtrl.chaCtrl.SetAccessoryStateCategory(0, toggleMain.isOn));
-                    toggleSub.onValueChanged.AddListener(x => drawCtrl.chaCtrl.SetAccessoryStateCategory(0, toggleMain.isOn));
-                }
-        #endif
-        #if KK
-                private static void ToggleShoeButtons(bool state)
-                {
-                    Transform root = MakerAPI.GetMakerBase().customCtrl.cmpDrawCtrl.tglShoesType[0].transform.parent.parent;
-                    for (int i = 0; i < root.childCount; i++)
-                    {
-                        if (root.GetChild(i).gameObject.name == "txtShoes")
-                        {
-                            root.GetChild(i + 0).gameObject.SetActive(state);
-                            root.GetChild(i + 1).gameObject.SetActive(state);
-                            root.GetChild(i + 2).gameObject.SetActive(state);
-                            break;
-                        }
-                    }
-                }
-        #endif*/
     }
 }

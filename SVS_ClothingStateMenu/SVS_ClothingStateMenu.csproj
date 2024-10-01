@@ -27,4 +27,7 @@
 		<Copy SourceFiles="$(TargetPath)" DestinationFolder="$(SolutionDir)bin" />
 	</Target>
 
+
+	<Import Project="..\Shared\Shared.projitems" Label="Shared" />
+
 </Project>
