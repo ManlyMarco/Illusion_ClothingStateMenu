@@ -10,7 +10,7 @@
 		<!-- Sets the 'Product name' field on the dll file -->
 		<Product>ClothingStateMenu</Product>
 		<!-- Sets the 'File description' field on the dll file -->
-		<AssemblyTitle>Utility for toggling state of clothes and accessories in character maker and game</AssemblyTitle>
+		<AssemblyTitle>Utility for toggling state of clothes and accessories in character maker, main game and H scenes</AssemblyTitle>
 
 		<RootNamespace>ClothingStateMenu</RootNamespace>
 
