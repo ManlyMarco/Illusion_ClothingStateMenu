@@ -60,9 +60,9 @@ Global
 		SolutionGuid = {BA00CF0D-C1D0-413C-81D7-B70E2FDB3DC2}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		Shared_Koi\Shared_Koi.projitems*{4e5a5ce7-44fd-497c-8968-03134a90e93d}*SharedItemsImports = 4
-		Shared_Koi\Shared_Koi.projitems*{969dcce7-796a-4234-b182-5456a6cf0add}*SharedItemsImports = 4
+		Shared_Koi\Shared_Koi.projitems*{4e5a5ce7-44fd-497c-8968-03134a90e93d}*SharedItemsImports = 5
+		Shared_Koi\Shared_Koi.projitems*{969dcce7-796a-4234-b182-5456a6cf0add}*SharedItemsImports = 5
 		Shared_Koi\Shared_Koi.projitems*{c6041971-6d9f-4fc8-ac97-2a2a4459e8e8}*SharedItemsImports = 13
-		Shared_Koi\Shared_Koi.projitems*{e30f73c8-e56e-42e2-8a93-1e63fcde74ad}*SharedItemsImports = 4
+		Shared_Koi\Shared_Koi.projitems*{e30f73c8-e56e-42e2-8a93-1e63fcde74ad}*SharedItemsImports = 5
 	EndGlobalSection
 EndGlobal
