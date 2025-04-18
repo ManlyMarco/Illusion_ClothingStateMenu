@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using BepInEx;
 using BepInEx.Configuration;
 using KKAPI;
@@ -15,7 +14,7 @@ namespace ClothingStateMenu
     public partial class ClothingStateMenuPlugin : BaseUnityPlugin
     {
         public const string Version = Constants.Version;
-        public const string GUID = Constants.GUID;
+        public const string GUID = "ClothingStateMenu";
 
         private const float Margin = 5f;
         private const float WindowWidth = 125f;

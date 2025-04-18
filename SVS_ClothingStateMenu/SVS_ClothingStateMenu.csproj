@@ -2,28 +2,40 @@
 
 	<PropertyGroup>
 		<TargetFramework>net6.0</TargetFramework>
-		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-		<RootNamespace>ClothingStateMenu</RootNamespace>
+		<OutputType>Library</OutputType>
+
 		<DefineConstants>$(DefineConstants);SVS</DefineConstants>
-		<DebugType>embedded</DebugType>
-		<WarningLevel>9999</WarningLevel>
 	</PropertyGroup>
+
 	<ItemGroup>
-		<PackageReference Include="BepInEx.ConfigurationManager.IL2CPP" Version="18.3.0" />
-		<PackageReference Include="BepInEx.KeyboardShortcut.IL2CPP" Version="18.3.0" />
-		<PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.725" />
-		<PackageReference Include="IllusionLibs.SamabakeScramble.Assembly-CSharp" Version="2024.8.30.1" />
-		<PackageReference Include="IllusionLibs.SamabakeScramble.AstarPathfindingProject" Version="2024.8.30.1" />
-		<PackageReference Include="IllusionLibs.SamabakeScramble.UnityEngine.UI" Version="2021.3.33.1" />
-		<PackageReference Include="IllusionLibs.XUnity.AutoTranslator.Plugin.Core.IL2CPP" Version="5.4.0" />
+		<PackageReference Include="BepInEx.ConfigurationManager.IL2CPP" Version="18.3.0">
+		  <IncludeAssets>compile</IncludeAssets>
+		  <PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+		<PackageReference Include="BepInEx.KeyboardShortcut.IL2CPP" Version="18.3.0">
+		  <IncludeAssets>compile</IncludeAssets>
+		  <PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+		<PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.725">
+		  <IncludeAssets>compile</IncludeAssets>
+		  <PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+		<PackageReference Include="IllusionLibs.SamabakeScramble.Assembly-CSharp" Version="2024.8.30.1">
+		  <IncludeAssets>compile</IncludeAssets>
+		  <PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+		<PackageReference Include="IllusionLibs.SamabakeScramble.AstarPathfindingProject" Version="2024.8.30.1">
+		  <IncludeAssets>compile</IncludeAssets>
+		  <PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+		<PackageReference Include="IllusionLibs.SamabakeScramble.UnityEngine.UI" Version="2021.3.33.1">
+		  <IncludeAssets>compile</IncludeAssets>
+		  <PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+		<PackageReference Include="IllusionLibs.XUnity.AutoTranslator.Plugin.Core.IL2CPP" Version="5.4.0">
+		  <IncludeAssets>compile</IncludeAssets>
+		  <PrivateAssets>all</PrivateAssets>
+		</PackageReference>
 	</ItemGroup>
-
-
-	<Target Name="CopyCustomContent" AfterTargets="AfterBuild">
-		<Copy SourceFiles="$(TargetPath)" DestinationFolder="$(SolutionDir)bin" />
-	</Target>
-
-
-	<Import Project="..\Shared\Shared.projitems" Label="Shared" />
 
 </Project>
