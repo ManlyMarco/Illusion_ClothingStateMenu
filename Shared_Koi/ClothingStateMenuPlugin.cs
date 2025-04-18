@@ -24,8 +24,7 @@ namespace ClothingStateMenu
         private static readonly List<GUIContent[][]> _AccessoryButtonContentCache = new List<GUIContent[][]>();
 
         private readonly List<IStateToggleButton> _buttons = new List<IStateToggleButton>();
-        private const int CoordCount = 7;
-        private readonly CoordButton[] _coordButtons = new CoordButton[CoordCount];
+        private readonly List<CoordButton> _coordButtons = new List<CoordButton>();
 
         private Rect _windowRect;
         private Vector2 _accessorySlotsScrollPos = Vector2.zero;
@@ -277,8 +276,26 @@ namespace ClothingStateMenu
 #if KK || KKS
             if (!MakerAPI.InsideMaker || ShowCoordinateButtons.Value)
             {
-                for (var i = 0; i < CoordCount; i++)
+                var coordinateCount = _chaCtrl.chaFile.coordinate.Length;
+                for (var i = 0; i < coordinateCount; i++)
                 {
+                    if (_coordButtons.Count <= i)
+                    {
+                        const float coordWidth = 25f;
+                        const float coordHeight = 20f;
+                        _coordButtons.Add(new CoordButton(coordId: i,
+                                                          changeAction: val =>
+                                                          {
+                                                              // Coordinate change buttons
+                                                              var customControl = MakerAPI.GetMakerBase()?.customCtrl;
+                                                              if (customControl != null)
+                                                                  customControl.ddCoordinate.value = val;
+                                                              else
+                                                                  _chaCtrl.ChangeCoordinateTypeAndReload((ChaFileDefine.CoordinateType)val);
+                                                          },
+                                                          position: new Rect(x: -coordWidth, y: 4 + coordHeight * i, width: coordWidth, height: coordHeight)));
+                    }
+
                     var btn = _coordButtons[i];
                     if (GUI.Button(new Rect(btn.Position.x + _windowRect.x, btn.Position.y + _windowRect.y, btn.Position.width, btn.Position.height), btn.Content))
                         btn.OnClick();
@@ -396,30 +413,6 @@ namespace ClothingStateMenu
                 {
                     Logger.LogWarning("Couldn't find toggleMain/toggleSub toggles");
                 }
-            }
-
-            // Coordinate change buttons
-            Action<int> setCoordAction;
-            var customControl = MakerAPI.GetMakerBase()?.customCtrl;
-            if (customControl != null)
-            {
-                var coordDropdown = customControl.ddCoordinate;
-                setCoordAction = newVal => coordDropdown.value = newVal;
-            }
-            else
-            {
-                setCoordAction = newVal => _chaCtrl.ChangeCoordinateTypeAndReload((ChaFileDefine.CoordinateType)newVal);
-            }
-
-            for (var i = 0; i < CoordCount; i++)
-            {
-                const float coordWidth = 25f;
-                const float coordHeight = 20f;
-                var position = new Rect(x: -coordWidth,
-                                        y: 4 + coordHeight * i,
-                                        width: coordWidth,
-                                        height: coordHeight);
-                _coordButtons[i] = new CoordButton(i, setCoordAction, position);
             }
 #endif
         }
