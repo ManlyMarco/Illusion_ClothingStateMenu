@@ -7,8 +7,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_ClothingStateMenu", "KK_
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EC_ClothingStateMenu", "EC_ClothingStateMenu\EC_ClothingStateMenu.csproj", "{4E5A5CE7-44FD-497C-8968-03134A90E93D}"
 EndProject
-Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Shared", "Shared\Shared.shproj", "{E2F7C946-51A2-4D1F-B57C-557638C47BD6}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KKS_ClothingStateMenu", "KKS_ClothingStateMenu\KKS_ClothingStateMenu.csproj", "{E30F73C8-E56E-42E2-8A93-1E63FCDE74AD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SVS_ClothingStateMenu", "SVS_ClothingStateMenu\SVS_ClothingStateMenu.csproj", "{7B874BC8-C1B5-4C3D-9CD7-0A02FDB0B800}"
@@ -18,6 +16,12 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "KK", "KK", "{8A0972EC-42D8-49D3-9F6F-42019A8947F7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SVS", "SVS", "{7D6A710C-637E-4253-8C9A-C2FAC71B182B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Solution", "_Solution", "{A82F8C71-3F89-4600-B222-28001F8C45B7}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -56,14 +60,9 @@ Global
 		SolutionGuid = {BA00CF0D-C1D0-413C-81D7-B70E2FDB3DC2}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		Shared\Shared.projitems*{4e5a5ce7-44fd-497c-8968-03134a90e93d}*SharedItemsImports = 4
-		Shared_Koi\Shared_Koi.projitems*{4e5a5ce7-44fd-497c-8968-03134a90e93d}*SharedItemsImports = 4
-		Shared\Shared.projitems*{7b874bc8-c1b5-4c3d-9cd7-0a02fdb0b800}*SharedItemsImports = 5
-		Shared\Shared.projitems*{969dcce7-796a-4234-b182-5456a6cf0add}*SharedItemsImports = 4
-		Shared_Koi\Shared_Koi.projitems*{969dcce7-796a-4234-b182-5456a6cf0add}*SharedItemsImports = 4
+		Shared_Koi\Shared_Koi.projitems*{4e5a5ce7-44fd-497c-8968-03134a90e93d}*SharedItemsImports = 5
+		Shared_Koi\Shared_Koi.projitems*{969dcce7-796a-4234-b182-5456a6cf0add}*SharedItemsImports = 5
 		Shared_Koi\Shared_Koi.projitems*{c6041971-6d9f-4fc8-ac97-2a2a4459e8e8}*SharedItemsImports = 13
-		Shared\Shared.projitems*{e2f7c946-51a2-4d1f-b57c-557638c47bd6}*SharedItemsImports = 13
-		Shared\Shared.projitems*{e30f73c8-e56e-42e2-8a93-1e63fcde74ad}*SharedItemsImports = 4
-		Shared_Koi\Shared_Koi.projitems*{e30f73c8-e56e-42e2-8a93-1e63fcde74ad}*SharedItemsImports = 4
+		Shared_Koi\Shared_Koi.projitems*{e30f73c8-e56e-42e2-8a93-1e63fcde74ad}*SharedItemsImports = 5
 	EndGlobalSection
 EndGlobal

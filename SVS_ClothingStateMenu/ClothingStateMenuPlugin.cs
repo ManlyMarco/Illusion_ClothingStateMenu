@@ -22,7 +22,7 @@ namespace ClothingStateMenu
     public class ClothingStateMenuPlugin : BasePlugin
     {
         public const string Version = Constants.Version;
-        public const string GUID = Constants.GUID;
+        public const string GUID = "ClothingStateMenu";
 
         internal static ManualLogSource Logger { get; private set; }
         private static ClothingStateMenuPlugin Instance { get; set; }
