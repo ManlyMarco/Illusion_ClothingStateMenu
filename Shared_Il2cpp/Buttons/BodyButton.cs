@@ -33,12 +33,18 @@ namespace ClothingStateMenu
         {
             if (chaControl == null)
                 throw new ArgumentNullException(nameof(chaControl));
-
+#if SVS
             var boneRoot = chaControl.body.objBone.transform.Find("cf_j_root");
+#elif AC
+            var boneRoot = chaControl.body._objBone.transform.Find("cf_j_root");
+#endif
             if (boneRoot != null)
                 IterateVisible(boneRoot.gameObject, visible);
-
+#if SVS
             var bodyRoot = chaControl.body.objBody.transform;
+#elif AC
+            var bodyRoot = chaControl.body._objBody.transform;
+#endif
             if (bodyRoot != null)
                 IterateVisible(bodyRoot.gameObject, visible);
 

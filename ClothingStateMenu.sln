@@ -23,6 +23,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Solution", "_Solution", "{
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Shared_Il2cpp", "Shared_Il2cpp\Shared_Il2cpp.shproj", "{905644EB-ADFE-40DA-8AE4-C21A56433612}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AC_ClothingStateMenu", "AC_ClothingStateMenu\AC_ClothingStateMenu.csproj", "{347C3388-7A17-41C4-BD6A-3F41893643C7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +49,10 @@ Global
 		{7B874BC8-C1B5-4C3D-9CD7-0A02FDB0B800}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7B874BC8-C1B5-4C3D-9CD7-0A02FDB0B800}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7B874BC8-C1B5-4C3D-9CD7-0A02FDB0B800}.Release|Any CPU.Build.0 = Release|Any CPU
+		{347C3388-7A17-41C4-BD6A-3F41893643C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{347C3388-7A17-41C4-BD6A-3F41893643C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{347C3388-7A17-41C4-BD6A-3F41893643C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{347C3388-7A17-41C4-BD6A-3F41893643C7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -55,12 +63,17 @@ Global
 		{E30F73C8-E56E-42E2-8A93-1E63FCDE74AD} = {8A0972EC-42D8-49D3-9F6F-42019A8947F7}
 		{7B874BC8-C1B5-4C3D-9CD7-0A02FDB0B800} = {7D6A710C-637E-4253-8C9A-C2FAC71B182B}
 		{C6041971-6D9F-4FC8-AC97-2A2A4459E8E8} = {8A0972EC-42D8-49D3-9F6F-42019A8947F7}
+		{905644EB-ADFE-40DA-8AE4-C21A56433612} = {7D6A710C-637E-4253-8C9A-C2FAC71B182B}
+		{347C3388-7A17-41C4-BD6A-3F41893643C7} = {7D6A710C-637E-4253-8C9A-C2FAC71B182B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BA00CF0D-C1D0-413C-81D7-B70E2FDB3DC2}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		Shared_Il2cpp\Shared_Il2cpp.projitems*{347c3388-7a17-41c4-bd6a-3f41893643c7}*SharedItemsImports = 5
 		Shared_Koi\Shared_Koi.projitems*{4e5a5ce7-44fd-497c-8968-03134a90e93d}*SharedItemsImports = 5
+		Shared_Il2cpp\Shared_Il2cpp.projitems*{7b874bc8-c1b5-4c3d-9cd7-0a02fdb0b800}*SharedItemsImports = 5
+		Shared_Il2cpp\Shared_Il2cpp.projitems*{905644eb-adfe-40da-8ae4-c21a56433612}*SharedItemsImports = 13
 		Shared_Koi\Shared_Koi.projitems*{969dcce7-796a-4234-b182-5456a6cf0add}*SharedItemsImports = 5
 		Shared_Koi\Shared_Koi.projitems*{c6041971-6d9f-4fc8-ac97-2a2a4459e8e8}*SharedItemsImports = 13
 		Shared_Koi\Shared_Koi.projitems*{e30f73c8-e56e-42e2-8a93-1e63fcde74ad}*SharedItemsImports = 5

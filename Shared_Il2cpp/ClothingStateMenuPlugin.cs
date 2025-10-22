@@ -34,7 +34,12 @@ namespace ClothingStateMenu
         private static readonly List<GUIContent[][]> _AccessoryButtonContentCache = new();
 
         private readonly List<IStateToggleButton> _buttons = new();
+#if SVS
         private const int CoordCount = 3; //todo make this not hardcoded
+#elif AC
+        // IDHI: maybe this way
+        private static readonly int CoordCount = Enum.GetValues(typeof(ChaFileDefine.CoordinateType)).Length;
+#endif
         private readonly CoordButton[] _coordButtons = new CoordButton[CoordCount];
 
         private Rect _windowRect;
@@ -106,7 +111,11 @@ namespace ClothingStateMenu
 
         private bool RefreshCharacterList()
         {
+#if SVS
             _visibleCharas = GameUtilities.GetCurrentHumans(false).ToArray();
+#elif AC
+            _visibleCharas = GameUtilities.GetCurrentHumans().ToArray();
+#endif
             if (_selectedChara == null || !_visibleCharas.Contains(_selectedChara))
                 _selectedChara = _visibleCharas.FirstOrDefault();
 
@@ -126,7 +135,6 @@ namespace ClothingStateMenu
             return anyChara;
         }
 
-
         private void Update()
         {
             if (Keybind.Value.IsDown())
@@ -134,6 +142,18 @@ namespace ClothingStateMenu
 
             if (_showInterface)
             {
+#if AC
+                // The window won't auto close when the plugin is used in game and the player
+                // don't close it after use it. There is a ocassion that I don't like if leave
+                // open on and H Scene the window will show during the stats update screen.
+                // I close did it using a hook to HScene.update_ for AC but decided is to
+                // complicated just for that. Removed the code.
+                if (GameUtilities.GetCurrentHumans().ToArray().Length == 0)
+                {
+                    _showInterface = false;
+                    return;
+                }
+#endif
                 if (!_selectedChara?.transform)
                 {
                     if (!RefreshCharacterList())
@@ -192,13 +212,17 @@ namespace ClothingStateMenu
                 GUILayout.Space(5);
 
                 var showAccessory = _selectedChara.fileStatus.showAccessory;
-
+#if SVS
+                var nowCoordinate = _selectedChara.cloth.nowCoordinate;
+#elif AC
+                var nowCoordinate = _selectedChara.coorde._nowCoordinate;
+#endif
                 _accessorySlotsScrollPos = GUILayout.BeginScrollView(_accessorySlotsScrollPos, _NoLayoutOptions);
                 {
                     // Not worthwhile to virtualize, far too few items
                     for (var j = 0; j < showAccessory.Length; j++)
                     {
-                        if (_selectedChara.cloth.nowCoordinate.Accessory.parts[j].type != 120)
+                        if (nowCoordinate.Accessory.parts[j].type != 120)
                             DrawAccesoryButton(j, showAccessory[j]);
                     }
                 }
@@ -246,9 +270,13 @@ namespace ClothingStateMenu
                     }
                 });
             }
-
+            // IDHI: #if #elif #endif doing it this way in hope to eventually merge the code for KK, KKS, etc..
+#if SVS
             var accTypeIndex = ShowMainSub.Value ? _selectedChara.cloth.nowCoordinate.Accessory.parts[accIndex].hideCategory : 2;
-
+#elif AC
+            var hideInH = _selectedChara.coorde._nowCoordinate.Accessory.parts[accIndex].hideCategory.IsHideCategory(HumanAccessory.HideCategory.H);
+            var accTypeIndex = ShowMainSub.Value ? (hideInH ? 1 : 2) : 2;
+#endif
             var acc = _AccessoryButtonContentCache[accIndex][isOn ? 0 : 1][accTypeIndex];
             if (GUILayout.Button(acc, _NoLayoutOptions))
                 _selectedChara.acs.SetAccessoryState(accIndex, !isOn);
@@ -265,11 +293,15 @@ namespace ClothingStateMenu
 
             _buttons.Clear();
 
+            // IDHI: I think this is the only change for SVS_ClothingStateMenu this leave space available
+            // for about 8 accessories which make it a better UE if the character have many accesories
+            // the user won't have to move and increase the size to work with the accesories
+
             // Let the window auto-size and keep the position while outside maker
             _windowRect = new Rect(x: _windowRect.x != 0 ? _windowRect.x : Margin + coordWidth,
-                                   y: _windowRect.y != 0 ? _windowRect.y : Screen.height - Margin - 400,
+                                   y: _windowRect.y != 0 ? _windowRect.y : Screen.height - Margin - 600, // 400
                                    width: WindowWidth,
-                                   height: 200);
+                                   height: 480); // 200
 
             // Clothing piece state buttons
             foreach (ChaFileDefine.ClothesKind kind in Enum.GetValues(typeof(ChaFileDefine.ClothesKind)))
@@ -285,9 +317,15 @@ namespace ClothingStateMenu
             _buttons.Add(new ActionButton("All accs Off", () => _selectedChara.acs.SetAccessoryStateAll(false)));
 
             _buttons.Add(null);
+#if SVS
             _buttons.Add(new ActionButton("Shown in H", () => _selectedChara.acs.SetAccessoryStateCategory(0, _lastValueAccShow = !_lastValueAccShow)));
             _buttons.Add(new ActionButton("Hidden in H", () => _selectedChara.acs.SetAccessoryStateCategory(1, _lastValueAccHide = !_lastValueAccHide)));
-
+#elif AC
+            _buttons.Add(new ActionButton("Shown in H", () => _selectedChara
+                .SetHiddenAccessoryState(HumanAccessory.HideCategory.H, _lastValueAccShow = !_lastValueAccShow, invertH: true)));
+            _buttons.Add(new ActionButton("Hidden in H", () => _selectedChara
+                .SetHiddenAccessoryState(HumanAccessory.HideCategory.H, _lastValueAccHide = !_lastValueAccHide)));
+#endif
             // Coordinate change buttons
             Action<int> setCoordAction = newVal =>
             {
