@@ -144,11 +144,11 @@ namespace ClothingStateMenu
             {
 #if AC
                 // The window won't auto close when the plugin is used in game and the player
-                // don't close it after use it. There is a ocassion that I don't like if leave
+                // don't close it after use it. There is a occasion that I don't like if leave
                 // open on and H Scene the window will show during the stats update screen.
                 // I close did it using a hook to HScene.update_ for AC but decided is to
                 // complicated just for that. Removed the code.
-                if (GameUtilities.GetCurrentHumans().ToArray().Length == 0)
+                if (GameUtilities.GetCurrentHumans().Any())
                 {
                     _showInterface = false;
                     return;
@@ -292,10 +292,6 @@ namespace ClothingStateMenu
             const float coordHeight = 20f;
 
             _buttons.Clear();
-
-            // IDHI: I think this is the only change for SVS_ClothingStateMenu this leave space available
-            // for about 8 accessories which make it a better UE if the character have many accesories
-            // the user won't have to move and increase the size to work with the accesories
 
             // Let the window auto-size and keep the position while outside maker
             _windowRect = new Rect(x: _windowRect.x != 0 ? _windowRect.x : Margin + coordWidth,

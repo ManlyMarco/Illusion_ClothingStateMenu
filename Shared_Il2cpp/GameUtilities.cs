@@ -57,7 +57,7 @@ internal static class GameUtilities
     public static bool InsideHScene => H.HScene.IsActive();
 
     /// <summary>
-    /// True if and ADV or Touch scene is playing
+    /// True if an ADV or Touch scene is playing
     /// </summary>
     public static bool InsideCommunication
     {
@@ -209,7 +209,7 @@ internal static class GameUtilities
         return Enumerable.Empty<Human>();
     }
 
-    // IDHI: Human information as found under AC.Scene.Explor.Actor
+    // IDHI: Human information as found under AC.Scene.Explore.Actor
     // Dictionary<AC.User.ActorData, AC.Scene.Explore.Actor.Params.Chara>
     public static Dictionary<Actor, Human> GetHumansDictionary()
     {
