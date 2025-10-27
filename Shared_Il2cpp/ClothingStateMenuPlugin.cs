@@ -34,13 +34,9 @@ namespace ClothingStateMenu
         private static readonly List<GUIContent[][]> _AccessoryButtonContentCache = new();
 
         private readonly List<IStateToggleButton> _buttons = new();
-#if SVS
-        private const int CoordCount = 3; //todo make this not hardcoded
-#elif AC
-        // IDHI: maybe this way
+
         private static readonly int CoordCount = Enum.GetValues(typeof(ChaFileDefine.CoordinateType)).Length;
-#endif
-        private readonly CoordButton[] _coordButtons = new CoordButton[CoordCount];
+        private CoordButton[] _coordButtons = new CoordButton[CoordCount];
 
         private Rect _windowRect;
         private Vector2 _accessorySlotsScrollPos = Vector2.zero;
@@ -238,7 +234,8 @@ namespace ClothingStateMenu
 
             if (!GameUtilities.InsideMaker || ShowCoordinateButtons.Value)
             {
-                for (var i = 0; i < CoordCount; i++)
+                // IDHI: Use the actual length of _coordButtons which can be different if MoreOutfis is been used
+                for (var i = 0; i < _coordButtons.Length; i++)
                 {
                     var btn = _coordButtons[i];
                     if (GUI.Button(new Rect(btn.Position.x + _windowRect.x, btn.Position.y + _windowRect.y, btn.Position.width, btn.Position.height), btn.Content))
@@ -275,7 +272,7 @@ namespace ClothingStateMenu
             var accTypeIndex = ShowMainSub.Value ? _selectedChara.cloth.nowCoordinate.Accessory.parts[accIndex].hideCategory : 2;
 #elif AC
             var hideInH = _selectedChara.coorde._nowCoordinate.Accessory.parts[accIndex].hideCategory.IsHideCategory(HumanAccessory.HideCategory.H);
-            var accTypeIndex = ShowMainSub.Value ? (hideInH ? 1 : 2) : 2;
+            var accTypeIndex = ShowMainSub.Value ? (hideInH ? 1 : 0) : 2;
 #endif
             var acc = _AccessoryButtonContentCache[accIndex][isOn ? 0 : 1][accTypeIndex];
             if (GUILayout.Button(acc, _NoLayoutOptions))
@@ -343,7 +340,13 @@ namespace ClothingStateMenu
                 _selectedChara.coorde.SetNowCoordinate(_selectedChara.data.Coordinates[newVal]);
                 _selectedChara.ReloadCoordinate();
             };
-            for (var i = 0; i < CoordCount; i++)
+            // IDHI: Check and adjust _coordButtons length MoreOutfits will change this from default
+            // This should happen only once
+            if (_coordButtons.Length != _selectedChara.data.Coordinates.Count)
+            {
+                _coordButtons = new CoordButton[_selectedChara.data.Coordinates.Count];
+            }
+            for (var i = 0; i < _coordButtons.Length; i++)
             {
                 var position = new Rect(x: -coordWidth,
                                         y: 4 + coordHeight * i,
