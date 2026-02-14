@@ -30,4 +30,6 @@
 		</PackageReference>
 	</ItemGroup>
 
+	<Import Project="..\Shared_Il2cpp\Shared_Il2cpp.projitems" Label="Shared" />
+
 </Project>

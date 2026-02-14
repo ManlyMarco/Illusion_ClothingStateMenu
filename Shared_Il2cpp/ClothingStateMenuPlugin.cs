@@ -34,8 +34,9 @@ namespace ClothingStateMenu
         private static readonly List<GUIContent[][]> _AccessoryButtonContentCache = new();
 
         private readonly List<IStateToggleButton> _buttons = new();
-        private const int CoordCount = 3; //todo make this not hardcoded
-        private readonly CoordButton[] _coordButtons = new CoordButton[CoordCount];
+
+        private static readonly int CoordCount = Enum.GetValues(typeof(ChaFileDefine.CoordinateType)).Length;
+        private CoordButton[] _coordButtons = new CoordButton[CoordCount];
 
         private Rect _windowRect;
         private Vector2 _accessorySlotsScrollPos = Vector2.zero;
@@ -106,7 +107,11 @@ namespace ClothingStateMenu
 
         private bool RefreshCharacterList()
         {
+#if SVS
             _visibleCharas = GameUtilities.GetCurrentHumans(false).ToArray();
+#elif AC
+            _visibleCharas = GameUtilities.GetCurrentHumans().ToArray();
+#endif
             if (_selectedChara == null || !_visibleCharas.Contains(_selectedChara))
                 _selectedChara = _visibleCharas.FirstOrDefault();
 
@@ -126,7 +131,6 @@ namespace ClothingStateMenu
             return anyChara;
         }
 
-
         private void Update()
         {
             if (Keybind.Value.IsDown())
@@ -134,6 +138,18 @@ namespace ClothingStateMenu
 
             if (_showInterface)
             {
+#if AC
+                // The window won't auto close when the plugin is used in game and the player
+                // don't close it after use it. There is a occasion that I don't like if leave
+                // open on and H Scene the window will show during the stats update screen.
+                // I close did it using a hook to HScene.update_ for AC but decided is to
+                // complicated just for that. Removed the code.
+                if (GameUtilities.GetCurrentHumans().Any())
+                {
+                    _showInterface = false;
+                    return;
+                }
+#endif
                 if (!_selectedChara?.transform)
                 {
                     if (!RefreshCharacterList())
@@ -192,13 +208,17 @@ namespace ClothingStateMenu
                 GUILayout.Space(5);
 
                 var showAccessory = _selectedChara.fileStatus.showAccessory;
-
+#if SVS
+                var nowCoordinate = _selectedChara.cloth.nowCoordinate;
+#elif AC
+                var nowCoordinate = _selectedChara.coorde._nowCoordinate;
+#endif
                 _accessorySlotsScrollPos = GUILayout.BeginScrollView(_accessorySlotsScrollPos, _NoLayoutOptions);
                 {
                     // Not worthwhile to virtualize, far too few items
                     for (var j = 0; j < showAccessory.Length; j++)
                     {
-                        if (_selectedChara.cloth.nowCoordinate.Accessory.parts[j].type != 120)
+                        if (nowCoordinate.Accessory.parts[j].type != 120)
                             DrawAccesoryButton(j, showAccessory[j]);
                     }
                 }
@@ -214,7 +234,8 @@ namespace ClothingStateMenu
 
             if (!GameUtilities.InsideMaker || ShowCoordinateButtons.Value)
             {
-                for (var i = 0; i < CoordCount; i++)
+                // IDHI: Use the actual length of _coordButtons which can be different if MoreOutfis is been used
+                for (var i = 0; i < _coordButtons.Length; i++)
                 {
                     var btn = _coordButtons[i];
                     if (GUI.Button(new Rect(btn.Position.x + _windowRect.x, btn.Position.y + _windowRect.y, btn.Position.width, btn.Position.height), btn.Content))
@@ -246,9 +267,13 @@ namespace ClothingStateMenu
                     }
                 });
             }
-
+            // IDHI: #if #elif #endif doing it this way in hope to eventually merge the code for KK, KKS, etc..
+#if SVS
             var accTypeIndex = ShowMainSub.Value ? _selectedChara.cloth.nowCoordinate.Accessory.parts[accIndex].hideCategory : 2;
-
+#elif AC
+            var hideInH = _selectedChara.coorde._nowCoordinate.Accessory.parts[accIndex].hideCategory.IsHideCategory(HumanAccessory.HideCategory.H);
+            var accTypeIndex = ShowMainSub.Value ? (hideInH ? 1 : 0) : 2;
+#endif
             var acc = _AccessoryButtonContentCache[accIndex][isOn ? 0 : 1][accTypeIndex];
             if (GUILayout.Button(acc, _NoLayoutOptions))
                 _selectedChara.acs.SetAccessoryState(accIndex, !isOn);
@@ -267,9 +292,9 @@ namespace ClothingStateMenu
 
             // Let the window auto-size and keep the position while outside maker
             _windowRect = new Rect(x: _windowRect.x != 0 ? _windowRect.x : Margin + coordWidth,
-                                   y: _windowRect.y != 0 ? _windowRect.y : Screen.height - Margin - 400,
+                                   y: _windowRect.y != 0 ? _windowRect.y : Screen.height - Margin - 600, // 400
                                    width: WindowWidth,
-                                   height: 200);
+                                   height: 480); // 200
 
             // Clothing piece state buttons
             foreach (ChaFileDefine.ClothesKind kind in Enum.GetValues(typeof(ChaFileDefine.ClothesKind)))
@@ -285,9 +310,15 @@ namespace ClothingStateMenu
             _buttons.Add(new ActionButton("All accs Off", () => _selectedChara.acs.SetAccessoryStateAll(false)));
 
             _buttons.Add(null);
+#if SVS
             _buttons.Add(new ActionButton("Shown in H", () => _selectedChara.acs.SetAccessoryStateCategory(0, _lastValueAccShow = !_lastValueAccShow)));
             _buttons.Add(new ActionButton("Hidden in H", () => _selectedChara.acs.SetAccessoryStateCategory(1, _lastValueAccHide = !_lastValueAccHide)));
-
+#elif AC
+            _buttons.Add(new ActionButton("Shown in H", () => _selectedChara
+                .SetHiddenAccessoryState(HumanAccessory.HideCategory.H, _lastValueAccShow = !_lastValueAccShow, invertH: true)));
+            _buttons.Add(new ActionButton("Hidden in H", () => _selectedChara
+                .SetHiddenAccessoryState(HumanAccessory.HideCategory.H, _lastValueAccHide = !_lastValueAccHide)));
+#endif
             // Coordinate change buttons
             Action<int> setCoordAction = newVal =>
             {
@@ -309,7 +340,13 @@ namespace ClothingStateMenu
                 _selectedChara.coorde.SetNowCoordinate(_selectedChara.data.Coordinates[newVal]);
                 _selectedChara.ReloadCoordinate();
             };
-            for (var i = 0; i < CoordCount; i++)
+            // IDHI: Check and adjust _coordButtons length MoreOutfits will change this from default
+            // This should happen only once
+            if (_coordButtons.Length != _selectedChara.data.Coordinates.Count)
+            {
+                _coordButtons = new CoordButton[_selectedChara.data.Coordinates.Count];
+            }
+            for (var i = 0; i < _coordButtons.Length; i++)
             {
                 var position = new Rect(x: -coordWidth,
                                         y: 4 + coordHeight * i,

@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>905644eb-adfe-40da-8ae4-c21a56433612</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>Shared_Il2cpp</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Buttons\ActionButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Buttons\BodyButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Buttons\ClothButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Buttons\CoordButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Buttons\IStateToggleButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Buttons\ShoeButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Buttons\ToggleButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ClothingStateMenuPlugin.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GameUtilities.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\Extensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\Il2CppExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\ImguiComboBox.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\IMGUIUtils.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\TranslationHelper.cs" />
+  </ItemGroup>
+</Project>
