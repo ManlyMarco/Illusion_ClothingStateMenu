@@ -138,18 +138,6 @@ namespace ClothingStateMenu
 
             if (_showInterface)
             {
-#if AC
-                // The window won't auto close when the plugin is used in game and the player
-                // don't close it after use it. There is a occasion that I don't like if leave
-                // open on and H Scene the window will show during the stats update screen.
-                // I close did it using a hook to HScene.update_ for AC but decided is to
-                // complicated just for that. Removed the code.
-                if (GameUtilities.GetCurrentHumans().Any())
-                {
-                    _showInterface = false;
-                    return;
-                }
-#endif
                 if (!_selectedChara?.transform)
                 {
                     if (!RefreshCharacterList())
